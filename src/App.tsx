@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import NotFoundPage from "./pages/NotFoundPage";
 import ProductListPage from "./pages/ProductListPage";
@@ -33,11 +34,19 @@ const App = () => (
               <Route path="/products/:categorySlug" element={<ProductListPage />} />
               <Route path="/product/:slug" element={<ProductDetailPage />} />
               <Route path="/cart" element={<CartPage />} />
-              <Route path="/wishlist" element={<WishlistPage />} />
+              <Route path="/wishlist" element={
+                <ProtectedRoute>
+                  <WishlistPage />
+                </ProtectedRoute>
+              } />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
-              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin" element={
+                <ProtectedRoute requireAdmin={true}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </BrowserRouter>
