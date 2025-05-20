@@ -14,7 +14,7 @@ const AdminDashboard = () => {
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
   // If not logged in or not an admin, redirect to login
-  if (!user || !isAdmin()) {
+  if (!user || !isAdmin) {
     return <Navigate to="/login" />;
   }
 

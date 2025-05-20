@@ -43,7 +43,7 @@ const Navbar = () => {
                   <Link to="/products/t-shirts" className="text-lg hover:text-primary">T-Shirts</Link>
                   <Link to="/products/pants" className="text-lg hover:text-primary">Pants</Link>
                   <Link to="/products/accessories" className="text-lg hover:text-primary">Accessories</Link>
-                  {isAdmin() && (
+                  {isAdmin && (
                     <Link to="/admin" className="text-lg hover:text-primary">Admin</Link>
                   )}
                 </nav>
@@ -64,7 +64,7 @@ const Navbar = () => {
             <Link to="/products/t-shirts" className="font-medium hover:text-primary transition-colors">T-Shirts</Link>
             <Link to="/products/pants" className="font-medium hover:text-primary transition-colors">Pants</Link>
             <Link to="/products/accessories" className="font-medium hover:text-primary transition-colors">Accessories</Link>
-            {isAdmin() && (
+            {isAdmin && (
               <Link to="/admin" className="font-medium hover:text-primary transition-colors">Admin</Link>
             )}
           </nav>
