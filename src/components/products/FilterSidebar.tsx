@@ -4,6 +4,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { ProductTag } from '@/types/product';
+import { Slider } from '@/components/ui/slider';
 
 interface FilterSidebarProps {
   categories: { id: string; name: string; slug: string }[];
@@ -30,6 +31,10 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   onPriceChange,
   onClearFilters
 }) => {
+  const handlePriceRangeChange = (values: number[]) => {
+    onPriceChange([values[0], values[1]]);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -58,7 +63,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
       <div>
         <h3 className="font-medium text-lg mb-3">Tags</h3>
-        <div className="space-y-2">
+        <div className="space-y-2 max-h-48 overflow-y-auto">
           {tags.map((tag) => (
             <div key={tag.id} className="flex items-center space-x-2">
               <Checkbox 
@@ -76,27 +81,18 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
         <h3 className="font-medium text-lg mb-3">Price Range</h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <span>${priceRange[0]}</span>
-            <span>${priceRange[1]}</span>
+            <span className="text-sm font-medium">${priceRange[0]}</span>
+            <span className="text-sm font-medium">${priceRange[1]}</span>
           </div>
-          <div className="flex space-x-2">
-            <input
-              type="range"
-              min="0"
-              max={maxPrice}
-              value={priceRange[0]}
-              onChange={(e) => onPriceChange([parseInt(e.target.value), priceRange[1]])}
-              className="w-full"
-            />
-            <input
-              type="range"
-              min="0"
-              max={maxPrice}
-              value={priceRange[1]}
-              onChange={(e) => onPriceChange([priceRange[0], parseInt(e.target.value)])}
-              className="w-full"
-            />
-          </div>
+          <Slider
+            defaultValue={[priceRange[0], priceRange[1]]}
+            min={0}
+            max={maxPrice}
+            step={5}
+            value={[priceRange[0], priceRange[1]]}
+            onValueChange={handlePriceRangeChange}
+            className="w-full"
+          />
         </div>
       </div>
 

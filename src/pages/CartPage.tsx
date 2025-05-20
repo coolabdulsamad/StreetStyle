@@ -4,147 +4,159 @@ import { Link } from 'react-router-dom';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Trash, X, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
-import { Trash2 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 const CartPage = () => {
   const { items, removeFromCart, updateQuantity, total, clearCart } = useCart();
 
-  return (
-    <PageLayout>
-      <div className="container py-8">
-        <h1 className="text-3xl font-bold mb-8">Shopping Cart</h1>
-
-        {items.length === 0 ? (
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-medium mb-4">Your cart is empty</h2>
-            <p className="text-muted-foreground mb-8">
-              Looks like you haven't added anything to your cart yet.
-            </p>
+  if (items.length === 0) {
+    return (
+      <PageLayout>
+        <div className="container py-16">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-3xl font-bold mb-6">Your Cart is Empty</h1>
+            <ShoppingCart className="w-16 h-16 mx-auto mb-6 text-muted-foreground" />
+            <p className="mb-8">Looks like you haven't added anything to your cart yet.</p>
             <Button asChild>
               <Link to="/products">Start Shopping</Link>
             </Button>
           </div>
-        ) : (
+        </div>
+      </PageLayout>
+    );
+  }
+
+  return (
+    <PageLayout>
+      <div className="container py-10">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-3xl font-bold mb-8">Your Cart</h1>
+          
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Cart Items */}
             <div className="lg:col-span-2">
-              <div className="space-y-4">
-                {items.map((item) => (
-                  <div 
-                    key={item.id} 
-                    className="flex flex-col sm:flex-row gap-4 p-4 border rounded-md"
-                  >
-                    {/* Product Image */}
-                    <div className="w-full sm:w-40 aspect-square">
-                      <Link to={`/product/${item.product.slug}`}>
-                        <img 
-                          src={item.product.images[0]} 
-                          alt={item.product.name}
-                          className="w-full h-full object-cover rounded-md"
-                        />
-                      </Link>
-                    </div>
-                    
-                    {/* Product Info */}
-                    <div className="flex-grow">
-                      <Link to={`/product/${item.product.slug}`}>
-                        <h3 className="font-medium text-lg">{item.product.name}</h3>
-                      </Link>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {item.variant.name}
-                      </p>
-                      <div className="flex items-center gap-4 mt-4">
-                        <div className="flex items-center">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+              <div className="border rounded-md overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">Product</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Variant</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead className="w-[70px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {items.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <div className="w-20 h-20 overflow-hidden rounded">
+                            <img 
+                              src={item.product.images[0]} 
+                              alt={item.product.name} 
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = "/placeholder.svg";
+                              }}
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">{item.product.name}</TableCell>
+                        <TableCell>{item.variant.name}</TableCell>
+                        <TableCell>${item.variant.price.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <Input
+                              className="w-14 h-8 text-center"
+                              type="number"
+                              min={1}
+                              value={item.quantity}
+                              onChange={(e) => updateQuantity(item.id, parseInt(e.target.value))}
+                            />
+                            <Button 
+                              variant="outline" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          ${(item.variant.price * item.quantity).toFixed(2)}
+                        </TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => removeFromCart(item.id)}
+                            className="text-muted-foreground hover:text-destructive"
                           >
-                            -
+                            <X className="h-4 w-4" />
+                            <span className="sr-only">Remove</span>
                           </Button>
-                          <Input
-                            className="w-12 h-8 text-center mx-1"
-                            value={item.quantity}
-                            onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)}
-                            min="1"
-                          />
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          >
-                            +
-                          </Button>
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => removeFromCart(item.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {/* Price */}
-                    <div className="text-right font-medium sm:w-24">
-                      ${(item.variant.price * item.quantity).toFixed(2)}
-                    </div>
-                  </div>
-                ))}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
               
               <div className="flex justify-between mt-6">
-                <Button 
-                  variant="outline" 
-                  onClick={clearCart}
-                >
+                <Button variant="outline" onClick={clearCart} className="flex items-center gap-2">
+                  <Trash className="h-4 w-4" />
                   Clear Cart
                 </Button>
-                <Button asChild>
+                <Button asChild variant="outline">
                   <Link to="/products">Continue Shopping</Link>
                 </Button>
               </div>
             </div>
             
             {/* Order Summary */}
-            <div>
-              <div className="bg-gray-50 p-6 rounded-md">
+            <div className="lg:col-span-1">
+              <div className="border rounded-md p-6">
                 <h2 className="text-xl font-bold mb-4">Order Summary</h2>
-                <div className="space-y-2">
+                
+                <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span>Subtotal</span>
+                    <span>Subtotal ({items.reduce((acc, item) => acc + item.quantity, 0)} items)</span>
                     <span>${total.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping</span>
-                    <span>Calculated at checkout</span>
-                  </div>
-                  <div className="border-t my-4 pt-4 flex justify-between font-bold">
-                    <span>Total</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>Free</span>
                   </div>
                 </div>
                 
-                <Button className="w-full mt-4" asChild>
+                <Separator className="my-4" />
+                
+                <div className="flex justify-between font-bold text-lg mb-6">
+                  <span>Total</span>
+                  <span>${total.toFixed(2)}</span>
+                </div>
+                
+                <Button asChild className="w-full">
                   <Link to="/checkout">Proceed to Checkout</Link>
                 </Button>
-                
-                <div className="mt-6 text-sm text-muted-foreground text-center">
-                  <p>We accept</p>
-                  <div className="flex justify-center gap-2 mt-2">
-                    {/* Payment icons would go here */}
-                    <span className="px-2 py-1 border rounded text-xs">Visa</span>
-                    <span className="px-2 py-1 border rounded text-xs">Mastercard</span>
-                    <span className="px-2 py-1 border rounded text-xs">PayPal</span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </PageLayout>
   );
