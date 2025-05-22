@@ -5,6 +5,7 @@ import ProductGrid from '@/components/products/ProductGrid';
 import { Button } from '@/components/ui/button';
 import { CATEGORIES, getFeaturedProducts, getNewProducts } from '@/data/products';
 import { Link } from 'react-router-dom';
+import TrendingSection from '@/components/products/TrendingSection';
 
 const Index = () => {
   const featuredProducts = getFeaturedProducts();
@@ -19,6 +20,9 @@ const Index = () => {
             src="https://images.unsplash.com/photo-1552346154-21d32810aba3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80" 
             alt="Hero" 
             className="w-full h-[70vh] md:h-[80vh] object-cover opacity-70"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/placeholder.svg";
+            }}
           />
           <div className="absolute inset-0 flex flex-col justify-center items-center text-white p-4">
             <h1 className="text-4xl md:text-6xl font-bold mb-4 text-center">Premium Streetwear & Sneakers</h1>
@@ -54,6 +58,9 @@ const Index = () => {
           ))}
         </div>
       </section>
+
+      {/* Trending Section */}
+      <TrendingSection />
 
       {/* Featured Products */}
       <section className="py-16 bg-gray-50">
