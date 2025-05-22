@@ -1,16 +1,33 @@
-
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Trash, X, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
 
 const CartPage = () => {
   const { items, removeFromCart, updateQuantity, total, clearCart } = useCart();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleProceedToCheckout = () => {
+    if (!user) {
+      toast.info("Please log in to complete your purchase", {
+        action: {
+          label: "Login",
+          onClick: () => navigate('/login'),
+        },
+      });
+      return;
+    }
+    
+    navigate('/checkout');
+  };
 
   if (items.length === 0) {
     return (
@@ -150,8 +167,8 @@ const CartPage = () => {
                   <span>${total.toFixed(2)}</span>
                 </div>
                 
-                <Button asChild className="w-full">
-                  <Link to="/checkout">Proceed to Checkout</Link>
+                <Button className="w-full" onClick={handleProceedToCheckout}>
+                  {user ? 'Proceed to Checkout' : 'Login to Checkout'}
                 </Button>
               </div>
             </div>

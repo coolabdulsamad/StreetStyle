@@ -1,7 +1,7 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from "sonner";
 import { Product, ProductVariant } from '../types/product';
+import { useAuth } from './AuthContext';
 
 export type CartItem = {
   id: string;
@@ -39,23 +39,47 @@ const CartContext = createContext<CartContextType>({
 });
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+  
+  // Create user-specific storage keys
+  const getCartStorageKey = () => {
+    return user ? `streetwear_cart_${user.id}` : 'streetwear_cart_guest';
+  };
+  
+  const getWishlistStorageKey = () => {
+    return user ? `streetwear_wishlist_${user.id}` : 'streetwear_wishlist_guest';
+  };
+
   const [items, setItems] = useState<CartItem[]>(() => {
-    const savedCart = localStorage.getItem('streetwear_cart');
+    const savedCart = localStorage.getItem(getCartStorageKey());
     return savedCart ? JSON.parse(savedCart) : [];
   });
 
   const [wishlist, setWishlist] = useState<Product[]>(() => {
-    const savedWishlist = localStorage.getItem('streetwear_wishlist');
+    const savedWishlist = localStorage.getItem(getWishlistStorageKey());
     return savedWishlist ? JSON.parse(savedWishlist) : [];
   });
 
+  // Update local storage when cart or wishlist changes
   useEffect(() => {
-    localStorage.setItem('streetwear_cart', JSON.stringify(items));
-  }, [items]);
+    localStorage.setItem(getCartStorageKey(), JSON.stringify(items));
+  }, [items, user]);
 
   useEffect(() => {
-    localStorage.setItem('streetwear_wishlist', JSON.stringify(wishlist));
-  }, [wishlist]);
+    localStorage.setItem(getWishlistStorageKey(), JSON.stringify(wishlist));
+  }, [wishlist, user]);
+
+  // Load user-specific cart and wishlist when user changes
+  useEffect(() => {
+    const cartKey = getCartStorageKey();
+    const wishlistKey = getWishlistStorageKey();
+    
+    const savedCart = localStorage.getItem(cartKey);
+    const savedWishlist = localStorage.getItem(wishlistKey);
+    
+    setItems(savedCart ? JSON.parse(savedCart) : []);
+    setWishlist(savedWishlist ? JSON.parse(savedWishlist) : []);
+  }, [user]);
 
   const addToCart = (product: Product, variant: ProductVariant, quantity = 1) => {
     setItems(prevItems => {

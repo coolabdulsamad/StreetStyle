@@ -33,15 +33,28 @@ const formSchema = z.object({
 const CheckoutPage = () => {
   const { items, total, clearCart } = useCart();
   const { toast } = useToast();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to complete your purchase",
+        variant: "destructive",
+      });
+      navigate('/login', { state: { from: '/checkout' } });
+    }
+  }, [user, navigate, toast]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       firstName: "",
       lastName: "",
-      email: "",
+      email: user?.email || "",
       phoneNumber: "",
       address: "",
       city: "",

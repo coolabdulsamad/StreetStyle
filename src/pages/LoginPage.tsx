@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { z } from "zod";
@@ -37,15 +36,20 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("login");
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    // Set active tab based on location state
+    return location.state?.defaultTab || "login";
+  });
+
+  // Get the return URL from location state or default to home page
+  const from = location.state?.from?.pathname || location.state?.from || "/";
 
   // Redirect if user is already logged in
   useEffect(() => {
     if (user) {
-      const redirectTo = location.state?.from?.pathname || "/";
-      navigate(redirectTo);
+      navigate(from, { replace: true });
     }
-  }, [user, navigate, location]);
+  }, [user, navigate, from]);
 
   // Login form
   const loginForm = useForm<LoginFormValues>({
