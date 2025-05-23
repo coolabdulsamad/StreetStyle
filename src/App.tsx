@@ -1,4 +1,5 @@
 
+import React, { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,7 +22,6 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProductEdit from "./pages/admin/AdminProductEdit";
 import AdminProductNew from "./pages/admin/AdminProductNew";
 import ProfilePage from "./pages/ProfilePage";
-import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 // Initialize queryClient with default options
