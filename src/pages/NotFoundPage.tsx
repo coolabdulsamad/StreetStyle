@@ -15,7 +15,7 @@ const NotFoundPage = () => {
             The page you're looking for doesn't exist or has been moved.
           </p>
           <div className="flex gap-4 justify-center">
-            <Button asChild>
+            <Button asChild variant="default">
               <Link to="/">Back to Home</Link>
             </Button>
             <Button asChild variant="outline">

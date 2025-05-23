@@ -10,7 +10,8 @@ import { getUserWishlist } from '@/lib/services/wishlistService';
 import { Heart } from 'lucide-react';
 
 const WishlistPage = () => {
-  const { wishlist, setWishlist } = useCart();
+  const { wishlist } = useCart();
+  const [localWishlist, setLocalWishlist] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -18,7 +19,7 @@ const WishlistPage = () => {
       setIsLoading(true);
       try {
         const products = await getUserWishlist();
-        setWishlist(products);
+        setLocalWishlist(products);
       } catch (error) {
         console.error("Error fetching wishlist:", error);
       } finally {
@@ -27,7 +28,7 @@ const WishlistPage = () => {
     };
 
     fetchWishlist();
-  }, [setWishlist]);
+  }, []);
 
   return (
     <PageLayout>
@@ -38,7 +39,7 @@ const WishlistPage = () => {
           <div className="flex justify-center py-12">
             <div className="animate-pulse">Loading wishlist items...</div>
           </div>
-        ) : wishlist.length === 0 ? (
+        ) : localWishlist.length === 0 ? (
           <div className="text-center py-12 border rounded-lg bg-muted/30">
             <Heart className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <h2 className="text-2xl font-medium mb-4">Your wishlist is empty</h2>
@@ -51,8 +52,8 @@ const WishlistPage = () => {
           </div>
         ) : (
           <>
-            <ProductGrid products={wishlist} />
-            {wishlist.length > 0 && (
+            <ProductGrid products={localWishlist} />
+            {localWishlist.length > 0 && (
               <div className="text-center mt-8">
                 <Button variant="outline" asChild className="mr-4">
                   <Link to="/products">Continue Shopping</Link>
