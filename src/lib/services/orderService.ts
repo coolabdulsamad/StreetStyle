@@ -15,7 +15,7 @@ export async function getUserOrders(): Promise<Order[]> {
     return [];
   }
   
-  return data as unknown as Order[];
+  return (data || []) as unknown as Order[];
 }
 
 export async function getOrderDetails(orderId: string): Promise<Order | null> {

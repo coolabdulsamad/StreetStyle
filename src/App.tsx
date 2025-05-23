@@ -17,7 +17,9 @@ import WishlistPage from "./pages/WishlistPage";
 import SearchPage from "./pages/SearchPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
-import AdminDashboard from "./pages/AdminDashboard";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminProductEdit from "./pages/admin/AdminProductEdit";
+import AdminProductNew from "./pages/admin/AdminProductNew";
 import ProfilePage from "./pages/ProfilePage";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -93,6 +95,16 @@ const App = () => {
                 <Route path="/admin" element={
                   <ProtectedRoute requireAdmin={true}>
                     <AdminDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/products/:productId" element={
+                  <ProtectedRoute requireAdmin={true}>
+                    <AdminProductEdit />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/products/new" element={
+                  <ProtectedRoute requireAdmin={true}>
+                    <AdminProductNew />
                   </ProtectedRoute>
                 } />
                 <Route path="*" element={<NotFoundPage />} />

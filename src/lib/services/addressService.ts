@@ -16,7 +16,7 @@ export async function getUserAddresses(): Promise<Address[]> {
     return [];
   }
   
-  return data as unknown as Address[];
+  return (data || []) as unknown as Address[];
 }
 
 export async function getAddressById(addressId: string): Promise<Address | null> {

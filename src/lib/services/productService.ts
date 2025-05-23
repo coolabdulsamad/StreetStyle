@@ -20,7 +20,7 @@ export async function getProducts(options: {
 } = {}): Promise<{ products: ExtendedProduct[], count: number }> {
   try {
     let query = supabase
-      .from('products')
+      .from('products' as any)
       .select(`
         *,
         category:category_id (
@@ -39,7 +39,7 @@ export async function getProducts(options: {
     // Apply filters
     if (options.category) {
       const { data: categoryData } = await supabase
-        .from('product_categories')
+        .from('product_categories' as any)
         .select('id')
         .eq('slug', options.category)
         .single();
@@ -51,7 +51,7 @@ export async function getProducts(options: {
     
     if (options.brand) {
       const { data: brandData } = await supabase
-        .from('brands')
+        .from('brands' as any)
         .select('id')
         .eq('slug', options.brand)
         .single();
@@ -125,10 +125,13 @@ export async function getProducts(options: {
     
     if (error) throw error;
     
+    // Convert to expected type
+    const productsData = (data || []) as unknown as ExtendedProduct[];
+    
     // Get product images for each product
-    const productsWithImages = await Promise.all((data as ExtendedProduct[]).map(async (product) => {
+    const productsWithImages = await Promise.all(productsData.map(async (product) => {
       const { data: imageData, error: imageError } = await supabase
-        .from('product_images')
+        .from('product_images' as any)
         .select('image_url')
         .eq('product_id', product.id)
         .order('display_order', { ascending: true });
@@ -147,7 +150,7 @@ export async function getProducts(options: {
     if (session?.session?.user) {
       const userId = session.session.user.id;
       const { data: wishlistData } = await supabase
-        .from('wishlists')
+        .from('wishlists' as any)
         .select('product_id')
         .eq('user_id', userId);
       
@@ -174,7 +177,7 @@ export async function getProducts(options: {
 export async function getProductBySlug(slug: string): Promise<ExtendedProduct | null> {
   try {
     const { data, error } = await supabase
-      .from('products')
+      .from('products' as any)
       .select(`
         *,
         category:category_id (
@@ -195,11 +198,11 @@ export async function getProductBySlug(slug: string): Promise<ExtendedProduct | 
     
     if (error) throw error;
     
-    const product = data as ExtendedProduct;
+    const product = data as unknown as ExtendedProduct;
     
     // Get product images
     const { data: imageData, error: imageError } = await supabase
-      .from('product_images')
+      .from('product_images' as any)
       .select('image_url')
       .eq('product_id', product.id)
       .order('display_order', { ascending: true });
@@ -212,7 +215,7 @@ export async function getProductBySlug(slug: string): Promise<ExtendedProduct | 
     
     // Get product variants
     const { data: variantData, error: variantError } = await supabase
-      .from('product_variants')
+      .from('product_variants' as any)
       .select('*')
       .eq('product_id', product.id);
     
@@ -224,7 +227,7 @@ export async function getProductBySlug(slug: string): Promise<ExtendedProduct | 
     
     // Get product reviews
     const { data: reviewData, error: reviewError } = await supabase
-      .from('product_reviews')
+      .from('product_reviews' as any)
       .select(`
         *,
         user:user_id (
@@ -240,12 +243,12 @@ export async function getProductBySlug(slug: string): Promise<ExtendedProduct | 
       .order('created_at', { ascending: false });
     
     if (!reviewError && reviewData) {
-      product.reviews = reviewData.map(review => ({
+      product.reviews = (reviewData as any[]).map(review => ({
         ...review,
-        userName: review.user?.profiles[0]?.first_name 
+        userName: review.user?.profiles?.[0]?.first_name 
           ? `${review.user.profiles[0].first_name} ${review.user.profiles[0].last_name || ''}`
           : 'Anonymous User'
-      }));
+      })) as ProductReview[];
     } else {
       product.reviews = [];
     }
@@ -255,7 +258,7 @@ export async function getProductBySlug(slug: string): Promise<ExtendedProduct | 
     if (session?.session?.user) {
       const userId = session.session.user.id;
       const { data: wishlistData, error: wishlistError } = await supabase
-        .from('wishlists')
+        .from('wishlists' as any)
         .select('id')
         .eq('user_id', userId)
         .eq('product_id', product.id)
@@ -275,14 +278,14 @@ export async function getProductBySlug(slug: string): Promise<ExtendedProduct | 
 export async function getProductCategories(): Promise<ProductCategory[]> {
   try {
     const { data, error } = await supabase
-      .from('product_categories')
+      .from('product_categories' as any)
       .select('*')
       .eq('is_active', true)
       .order('display_order', { ascending: true });
     
     if (error) throw error;
     
-    return data as ProductCategory[];
+    return data as unknown as ProductCategory[];
   } catch (error) {
     console.error('Error fetching categories:', error);
     return [];
@@ -292,14 +295,14 @@ export async function getProductCategories(): Promise<ProductCategory[]> {
 export async function getBrands(): Promise<Brand[]> {
   try {
     const { data, error } = await supabase
-      .from('brands')
+      .from('brands' as any)
       .select('*')
       .eq('is_active', true)
       .order('name', { ascending: true });
     
     if (error) throw error;
     
-    return data as Brand[];
+    return data as unknown as Brand[];
   } catch (error) {
     console.error('Error fetching brands:', error);
     return [];
@@ -314,7 +317,7 @@ export async function addProductReview(
 ): Promise<ProductReview | null> {
   try {
     const { data, error } = await supabase
-      .from('product_reviews')
+      .from('product_reviews' as any)
       .insert([{
         product_id: productId,
         rating,
@@ -327,7 +330,7 @@ export async function addProductReview(
     if (error) throw error;
     
     toast.success('Review submitted successfully!');
-    return data as ProductReview;
+    return data as unknown as ProductReview;
   } catch (error: any) {
     console.error('Error adding review:', error);
     if (error.code === '23505') { // Unique constraint violation
@@ -342,7 +345,7 @@ export async function addProductReview(
 export async function voteReviewHelpful(reviewId: string): Promise<boolean> {
   try {
     const { data, error } = await supabase
-      .from('product_reviews')
+      .from('product_reviews' as any)
       .select('helpful_votes')
       .eq('id', reviewId)
       .single();
@@ -352,7 +355,7 @@ export async function voteReviewHelpful(reviewId: string): Promise<boolean> {
     const currentVotes = data.helpful_votes || 0;
     
     const { error: updateError } = await supabase
-      .from('product_reviews')
+      .from('product_reviews' as any)
       .update({ helpful_votes: currentVotes + 1 })
       .eq('id', reviewId);
     
