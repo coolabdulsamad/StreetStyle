@@ -1,42 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { toast } from 'sonner';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
 import PageLayout from '@/components/layout/PageLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import AddressList from '@/components/profile/AddressList';
-
-const profileFormSchema = z.object({
-  firstName: z.string().min(2, "First name must be at least 2 characters"),
-  lastName: z.string().min(2, "Last name must be at least 2 characters"),
-  phone: z.string().optional(),
-});
-
-const passwordFormSchema = z.object({
-  currentPassword: z.string().min(6, "Password must be at least 6 characters"),
-  newPassword: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(6, "Please confirm your password"),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
-});
-
-type ProfileFormValues = z.infer<typeof profileFormSchema>;
-type PasswordFormValues = z.infer<typeof passwordFormSchema>;
+import ProfileForm from '@/components/profile/ProfileForm';
+import PasswordChangeForm from '@/components/profile/PasswordChangeForm';
+import { User, Lock, MapPin, ShoppingBag } from 'lucide-react';
 
 const ProfilePage = () => {
-  const { user, profile, updateProfile, logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [isUpdating, setIsUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState("personal-info");
 
   useEffect(() => {
@@ -44,65 +22,6 @@ const ProfilePage = () => {
       navigate("/login");
     }
   }, [user, navigate]);
-
-  const profileForm = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileFormSchema),
-    defaultValues: {
-      firstName: profile?.first_name || "",
-      lastName: profile?.last_name || "",
-      phone: profile?.phone || "",
-    },
-  });
-
-  const passwordForm = useForm<PasswordFormValues>({
-    resolver: zodResolver(passwordFormSchema),
-    defaultValues: {
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    },
-  });
-
-  useEffect(() => {
-    if (profile) {
-      profileForm.reset({
-        firstName: profile.first_name || "",
-        lastName: profile.last_name || "",
-        phone: profile.phone || "",
-      });
-    }
-  }, [profile, profileForm]);
-
-  const handleProfileUpdate = async (values: ProfileFormValues) => {
-    setIsUpdating(true);
-    try {
-      await updateProfile({
-        first_name: values.firstName,
-        last_name: values.lastName,
-        phone: values.phone || null,
-      });
-      toast.success("Profile updated successfully");
-    } catch (error) {
-      toast.error("Failed to update profile");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handlePasswordUpdate = async (values: PasswordFormValues) => {
-    setIsUpdating(true);
-    try {
-      // In a real app, you would call an updatePassword function provided by your auth context
-      // For now, we'll just simulate a successful password change
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success("Password updated successfully");
-      passwordForm.reset();
-    } catch (error) {
-      toast.error("Failed to update password");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -113,7 +32,7 @@ const ProfilePage = () => {
     }
   };
 
-  if (!user || !profile) {
+  if (!user) {
     return (
       <PageLayout>
         <div className="container py-8">
@@ -122,6 +41,13 @@ const ProfilePage = () => {
       </PageLayout>
     );
   }
+
+  const menuItems = [
+    { id: 'personal-info', label: 'Personal Information', icon: <User className="h-4 w-4 mr-2" /> },
+    { id: 'security', label: 'Security', icon: <Lock className="h-4 w-4 mr-2" /> },
+    { id: 'addresses', label: 'Addresses', icon: <MapPin className="h-4 w-4 mr-2" /> },
+    { id: 'orders', label: 'Order History', icon: <ShoppingBag className="h-4 w-4 mr-2" /> },
+  ];
 
   return (
     <PageLayout>
@@ -134,34 +60,17 @@ const ProfilePage = () => {
             <Card>
               <CardContent className="p-4">
                 <div className="space-y-1">
-                  <Button 
-                    variant={activeTab === "personal-info" ? "default" : "ghost"} 
-                    className="w-full justify-start"
-                    onClick={() => setActiveTab("personal-info")}
-                  >
-                    Personal Information
-                  </Button>
-                  <Button 
-                    variant={activeTab === "security" ? "default" : "ghost"} 
-                    className="w-full justify-start"
-                    onClick={() => setActiveTab("security")}
-                  >
-                    Security
-                  </Button>
-                  <Button 
-                    variant={activeTab === "addresses" ? "default" : "ghost"} 
-                    className="w-full justify-start"
-                    onClick={() => setActiveTab("addresses")}
-                  >
-                    Addresses
-                  </Button>
-                  <Button 
-                    variant={activeTab === "orders" ? "default" : "ghost"} 
-                    className="w-full justify-start"
-                    onClick={() => setActiveTab("orders")}
-                  >
-                    Order History
-                  </Button>
+                  {menuItems.map(item => (
+                    <Button 
+                      key={item.id}
+                      variant={activeTab === item.id ? "default" : "ghost"} 
+                      className="w-full justify-start"
+                      onClick={() => setActiveTab(item.id)}
+                    >
+                      {item.icon}
+                      {item.label}
+                    </Button>
+                  ))}
                   
                   <Separator className="my-2" />
                   
@@ -184,67 +93,11 @@ const ProfilePage = () => {
                 <CardHeader>
                   <CardTitle>Personal Information</CardTitle>
                   <CardDescription>
-                    Update your personal details
+                    Update your personal details and avatar
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Form {...profileForm}>
-                    <form onSubmit={profileForm.handleSubmit(handleProfileUpdate)} className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={profileForm.control}
-                          name="firstName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>First Name</FormLabel>
-                              <FormControl>
-                                <Input {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={profileForm.control}
-                          name="lastName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Last Name</FormLabel>
-                              <FormControl>
-                                <Input {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      <FormField
-                        control={profileForm.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone Number</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-2">Email: {user.email}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Your email address is used for login and cannot be changed here.
-                        </p>
-                      </div>
-                      
-                      <Button type="submit" disabled={isUpdating}>
-                        {isUpdating ? "Updating..." : "Update Profile"}
-                      </Button>
-                    </form>
-                  </Form>
+                  <ProfileForm />
                 </CardContent>
               </Card>
             )}
@@ -258,55 +111,7 @@ const ProfilePage = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Form {...passwordForm}>
-                    <form onSubmit={passwordForm.handleSubmit(handlePasswordUpdate)} className="space-y-6">
-                      <FormField
-                        control={passwordForm.control}
-                        name="currentPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Current Password</FormLabel>
-                            <FormControl>
-                              <Input type="password" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={passwordForm.control}
-                        name="newPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>New Password</FormLabel>
-                            <FormControl>
-                              <Input type="password" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={passwordForm.control}
-                        name="confirmPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Confirm New Password</FormLabel>
-                            <FormControl>
-                              <Input type="password" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <Button type="submit" disabled={isUpdating}>
-                        {isUpdating ? "Updating..." : "Change Password"}
-                      </Button>
-                    </form>
-                  </Form>
+                  <PasswordChangeForm />
                 </CardContent>
               </Card>
             )}
@@ -320,8 +125,7 @@ const ProfilePage = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {/* This will be implemented in the AddressList component */}
-                  <p>Address management will be implemented in a future update.</p>
+                  <AddressList />
                 </CardContent>
               </Card>
             )}
