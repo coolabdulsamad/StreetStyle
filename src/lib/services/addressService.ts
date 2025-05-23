@@ -16,7 +16,7 @@ export async function getUserAddresses(): Promise<Address[]> {
     return [];
   }
   
-  return data as Address[];
+  return data as unknown as Address[];
 }
 
 export async function getAddressById(addressId: string): Promise<Address | null> {
@@ -32,7 +32,7 @@ export async function getAddressById(addressId: string): Promise<Address | null>
     return null;
   }
   
-  return data as Address;
+  return data as unknown as Address;
 }
 
 export async function createAddress(address: Omit<Address, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<Address | null> {
@@ -48,7 +48,7 @@ export async function createAddress(address: Omit<Address, 'id' | 'user_id' | 'c
   
   const { data, error } = await supabase
     .from('addresses')
-    .insert([address])
+    .insert([address as any])
     .select()
     .single();
   
@@ -59,7 +59,7 @@ export async function createAddress(address: Omit<Address, 'id' | 'user_id' | 'c
   }
   
   toast.success('Address saved successfully');
-  return data as Address;
+  return data as unknown as Address;
 }
 
 export async function updateAddress(addressId: string, address: Partial<Address>): Promise<Address | null> {
@@ -75,7 +75,7 @@ export async function updateAddress(addressId: string, address: Partial<Address>
   
   const { data, error } = await supabase
     .from('addresses')
-    .update(address)
+    .update(address as any)
     .eq('id', addressId)
     .select()
     .single();
@@ -87,7 +87,7 @@ export async function updateAddress(addressId: string, address: Partial<Address>
   }
   
   toast.success('Address updated successfully');
-  return data as Address;
+  return data as unknown as Address;
 }
 
 export async function deleteAddress(addressId: string): Promise<boolean> {
@@ -109,7 +109,7 @@ export async function deleteAddress(addressId: string): Promise<boolean> {
 async function resetDefaultAddresses(addressType: 'shipping' | 'billing'): Promise<void> {
   // Reset default flag for addresses that match the type
   await supabase
-    .from('addresses')
+    .from('addresses' as any)
     .update({ is_default: false })
     .or(`address_type.eq.${addressType},address_type.eq.both`);
 }
@@ -129,5 +129,5 @@ export async function getDefaultAddress(type: 'shipping' | 'billing'): Promise<A
     return null;
   }
   
-  return data as Address;
+  return data as unknown as Address;
 }
