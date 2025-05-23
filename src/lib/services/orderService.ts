@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 export async function getUserOrders(): Promise<Order[]> {
   const { data, error } = await supabase
-    .from('orders')
+    .from('orders' as any)
     .select('*')
     .order('created_at', { ascending: false });
   
@@ -15,13 +15,13 @@ export async function getUserOrders(): Promise<Order[]> {
     return [];
   }
   
-  return data as Order[];
+  return data as unknown as Order[];
 }
 
 export async function getOrderDetails(orderId: string): Promise<Order | null> {
   // First, get the order
   const { data: orderData, error: orderError } = await supabase
-    .from('orders')
+    .from('orders' as any)
     .select('*')
     .eq('id', orderId)
     .single();
@@ -32,11 +32,11 @@ export async function getOrderDetails(orderId: string): Promise<Order | null> {
     return null;
   }
   
-  const order = orderData as Order;
+  const order = orderData as unknown as Order;
   
   // Get order items
   const { data: itemsData, error: itemsError } = await supabase
-    .from('order_items')
+    .from('order_items' as any)
     .select(`
       *,
       product:product_id (
@@ -52,32 +52,32 @@ export async function getOrderDetails(orderId: string): Promise<Order | null> {
   if (itemsError) {
     console.error('Error fetching order items:', itemsError);
   } else {
-    order.items = itemsData as OrderItem[];
+    order.items = itemsData as unknown as OrderItem[];
   }
   
   // Get shipping address
   if (order.shipping_address_id) {
     const { data: shippingAddress, error: shippingError } = await supabase
-      .from('addresses')
+      .from('addresses' as any)
       .select('*')
       .eq('id', order.shipping_address_id)
       .single();
     
     if (!shippingError) {
-      order.shipping_address = shippingAddress as Address;
+      order.shipping_address = shippingAddress as unknown as Address;
     }
   }
   
   // Get billing address
   if (order.billing_address_id) {
     const { data: billingAddress, error: billingError } = await supabase
-      .from('addresses')
+      .from('addresses' as any)
       .select('*')
       .eq('id', order.billing_address_id)
       .single();
     
     if (!billingError) {
-      order.billing_address = billingAddress as Address;
+      order.billing_address = billingAddress as unknown as Address;
     }
   }
   
@@ -108,8 +108,8 @@ export async function createOrder(
 ): Promise<Order | null> {
   // Start a Supabase transaction
   const { data, error } = await supabase
-    .from('orders')
-    .insert([orderData])
+    .from('orders' as any)
+    .insert([orderData as any])
     .select()
     .single();
   
@@ -119,7 +119,7 @@ export async function createOrder(
     return null;
   }
   
-  const order = data as Order;
+  const order = data as unknown as Order;
   
   // Now insert order items
   const orderItemsWithOrderId = orderItems.map(item => ({
@@ -128,8 +128,8 @@ export async function createOrder(
   }));
   
   const { error: itemsError } = await supabase
-    .from('order_items')
-    .insert(orderItemsWithOrderId);
+    .from('order_items' as any)
+    .insert(orderItemsWithOrderId as any);
   
   if (itemsError) {
     console.error('Error creating order items:', itemsError);
@@ -143,8 +143,8 @@ export async function createOrder(
 
 export async function updateOrderStatus(orderId: string, status: Order['order_status']): Promise<boolean> {
   const { error } = await supabase
-    .from('orders')
-    .update({ order_status: status, updated_at: new Date().toISOString() })
+    .from('orders' as any)
+    .update({ order_status: status, updated_at: new Date().toISOString() } as any)
     .eq('id', orderId);
   
   if (error) {
@@ -163,11 +163,11 @@ export async function cancelOrder(orderId: string): Promise<boolean> {
 
 export async function updateTrackingNumber(orderId: string, trackingNumber: string): Promise<boolean> {
   const { error } = await supabase
-    .from('orders')
+    .from('orders' as any)
     .update({ 
       tracking_number: trackingNumber,
       updated_at: new Date().toISOString()
-    })
+    } as any)
     .eq('id', orderId);
   
   if (error) {

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 export async function getUserAddresses(): Promise<Address[]> {
   const { data, error } = await supabase
-    .from('addresses')
+    .from('addresses' as any)
     .select('*')
     .order('is_default', { ascending: false })
     .order('created_at', { ascending: false });
@@ -21,7 +21,7 @@ export async function getUserAddresses(): Promise<Address[]> {
 
 export async function getAddressById(addressId: string): Promise<Address | null> {
   const { data, error } = await supabase
-    .from('addresses')
+    .from('addresses' as any)
     .select('*')
     .eq('id', addressId)
     .single();
@@ -47,7 +47,7 @@ export async function createAddress(address: Omit<Address, 'id' | 'user_id' | 'c
   }
   
   const { data, error } = await supabase
-    .from('addresses')
+    .from('addresses' as any)
     .insert([address as any])
     .select()
     .single();
@@ -74,7 +74,7 @@ export async function updateAddress(addressId: string, address: Partial<Address>
   }
   
   const { data, error } = await supabase
-    .from('addresses')
+    .from('addresses' as any)
     .update(address as any)
     .eq('id', addressId)
     .select()
@@ -92,7 +92,7 @@ export async function updateAddress(addressId: string, address: Partial<Address>
 
 export async function deleteAddress(addressId: string): Promise<boolean> {
   const { error } = await supabase
-    .from('addresses')
+    .from('addresses' as any)
     .delete()
     .eq('id', addressId);
   
@@ -116,7 +116,7 @@ async function resetDefaultAddresses(addressType: 'shipping' | 'billing'): Promi
 
 export async function getDefaultAddress(type: 'shipping' | 'billing'): Promise<Address | null> {
   const { data, error } = await supabase
-    .from('addresses')
+    .from('addresses' as any)
     .select('*')
     .or(`address_type.eq.${type},address_type.eq.both`)
     .eq('is_default', true)
