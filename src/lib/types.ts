@@ -1,3 +1,4 @@
+
 // Core types for the e-commerce application
 
 export type Address = {
@@ -99,9 +100,10 @@ export type OrderItem = {
 
 export type Gender = 'men' | 'women' | 'unisex' | 'kids';
 
-export interface ExtendedProduct extends Product {
-  brand?: Brand;
+// Update the ExtendedProduct interface to make it compatible with Product
+export interface ExtendedProduct extends Omit<Product, 'category'> {
   category?: ProductCategory;
+  brand?: Brand;
   reviews?: ProductReview[];
   is_in_wishlist?: boolean;
 }

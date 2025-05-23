@@ -5,8 +5,9 @@ import { toast } from "sonner";
 
 export async function getUserWishlist(): Promise<Product[]> {
   try {
-    const { data, error } = await supabase
-      .from('wishlists')
+    // Use as any to work around type issues until Supabase types are updated
+    const { data, error } = await (supabase
+      .from('wishlists' as any)
       .select(`
         product_id,
         product:product_id (
@@ -23,22 +24,22 @@ export async function getUserWishlist(): Promise<Product[]> {
             logo_url
           )
         )
-      `);
+      `));
     
     if (error) throw error;
     
     // Extract products from the response and add images
-    const products = await Promise.all(data.map(async (item) => {
+    const products = await Promise.all((data || []).map(async (item: any) => {
       const product = item.product as Product;
       
       // Get product images
       const { data: imageData } = await supabase
-        .from('product_images')
+        .from('product_images' as any)
         .select('image_url')
         .eq('product_id', product.id)
         .order('display_order', { ascending: true });
       
-      product.images = imageData?.map(img => img.image_url) || [];
+      product.images = (imageData as any)?.map((img: any) => img.image_url) || [];
       
       return {
         ...product,
@@ -56,9 +57,10 @@ export async function getUserWishlist(): Promise<Product[]> {
 
 export async function addToWishlist(productId: string): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('wishlists')
-      .insert([{ product_id: productId }]);
+    // Use as any to work around type issues until Supabase types are updated
+    const { error } = await (supabase
+      .from('wishlists' as any)
+      .insert([{ product_id: productId }]));
     
     if (error) {
       if (error.code === '23505') { // Unique constraint violation
@@ -79,10 +81,11 @@ export async function addToWishlist(productId: string): Promise<boolean> {
 
 export async function removeFromWishlist(productId: string): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('wishlists')
+    // Use as any to work around type issues until Supabase types are updated
+    const { error } = await (supabase
+      .from('wishlists' as any)
       .delete()
-      .eq('product_id', productId);
+      .eq('product_id', productId));
     
     if (error) throw error;
     
@@ -97,11 +100,12 @@ export async function removeFromWishlist(productId: string): Promise<boolean> {
 
 export async function isInWishlist(productId: string): Promise<boolean> {
   try {
-    const { data, error } = await supabase
-      .from('wishlists')
+    // Use as any to work around type issues until Supabase types are updated
+    const { data, error } = await (supabase
+      .from('wishlists' as any)
       .select('id')
       .eq('product_id', productId)
-      .single();
+      .single());
     
     if (error && error.code !== 'PGRST116') { // Not PGRST116 (no rows returned)
       throw error;

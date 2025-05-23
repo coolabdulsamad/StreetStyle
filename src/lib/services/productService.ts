@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Brand, ExtendedProduct, Product, ProductCategory, ProductReview } from "@/lib/types";
 import { toast } from "sonner";
@@ -45,7 +44,7 @@ export async function getProducts(options: {
         .single();
       
       if (categoryData) {
-        query = query.eq('category_id', categoryData.id);
+        query = query.eq('category_id', (categoryData as any).id);
       }
     }
     
@@ -57,7 +56,7 @@ export async function getProducts(options: {
         .single();
       
       if (brandData) {
-        query = query.eq('brand_id', brandData.id);
+        query = query.eq('brand_id', (brandData as any).id);
       }
     }
     
@@ -137,7 +136,7 @@ export async function getProducts(options: {
         .order('display_order', { ascending: true });
       
       if (!imageError && imageData) {
-        product.images = imageData.map(item => item.image_url);
+        product.images = (imageData as any).map((item: any) => item.image_url);
       } else {
         product.images = [];
       }
@@ -155,7 +154,7 @@ export async function getProducts(options: {
         .eq('user_id', userId);
       
       if (wishlistData) {
-        const wishlistProductIds = new Set(wishlistData.map(item => item.product_id));
+        const wishlistProductIds = new Set((wishlistData as any).map((item: any) => item.product_id));
         productsWithImages.forEach(product => {
           product.is_in_wishlist = wishlistProductIds.has(product.id);
         });
@@ -208,7 +207,7 @@ export async function getProductBySlug(slug: string): Promise<ExtendedProduct | 
       .order('display_order', { ascending: true });
     
     if (!imageError && imageData) {
-      product.images = imageData.map(item => item.image_url);
+      product.images = (imageData as any).map((item: any) => item.image_url);
     } else {
       product.images = [];
     }
@@ -220,7 +219,7 @@ export async function getProductBySlug(slug: string): Promise<ExtendedProduct | 
       .eq('product_id', product.id);
     
     if (!variantError && variantData) {
-      product.variants = variantData;
+      product.variants = variantData as any;
     } else {
       product.variants = [];
     }
@@ -243,12 +242,12 @@ export async function getProductBySlug(slug: string): Promise<ExtendedProduct | 
       .order('created_at', { ascending: false });
     
     if (!reviewError && reviewData) {
-      product.reviews = (reviewData as any[]).map(review => ({
+      product.reviews = ((reviewData as any).map((review: any) => ({
         ...review,
         userName: review.user?.profiles?.[0]?.first_name 
           ? `${review.user.profiles[0].first_name} ${review.user.profiles[0].last_name || ''}`
           : 'Anonymous User'
-      })) as ProductReview[];
+      }))) as ProductReview[];
     } else {
       product.reviews = [];
     }
@@ -257,14 +256,14 @@ export async function getProductBySlug(slug: string): Promise<ExtendedProduct | 
     const { data: session } = await supabase.auth.getSession();
     if (session?.session?.user) {
       const userId = session.session.user.id;
-      const { data: wishlistData, error: wishlistError } = await supabase
+      const { data: wishlistData } = await supabase
         .from('wishlists' as any)
         .select('id')
         .eq('user_id', userId)
         .eq('product_id', product.id)
-        .single();
+        .maybeSingle();
       
-      product.is_in_wishlist = !wishlistError && wishlistData;
+      product.is_in_wishlist = !!wishlistData;
     }
     
     return product;
@@ -352,7 +351,7 @@ export async function voteReviewHelpful(reviewId: string): Promise<boolean> {
     
     if (error) throw error;
     
-    const currentVotes = data.helpful_votes || 0;
+    const currentVotes = (data as any).helpful_votes || 0;
     
     const { error: updateError } = await supabase
       .from('product_reviews' as any)

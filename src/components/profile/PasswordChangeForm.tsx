@@ -38,6 +38,7 @@ const PasswordChangeForm: React.FC = () => {
       const success = await updateUserPassword(values.currentPassword, values.newPassword);
       if (success) {
         form.reset();
+        toast.success("Password updated successfully");
       }
     } catch (error) {
       console.error('Error updating password:', error);
