@@ -30,9 +30,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       average_rating: null,
       review_count: 0,
       meta_title: null,
-      meta_description: null,
-      tags: product.tags || [],
-      variants: product.variants || []
+      meta_description: null
     };
     
     await toggleWishlist(productForWishlist);

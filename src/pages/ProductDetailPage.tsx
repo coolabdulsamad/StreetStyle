@@ -67,8 +67,25 @@ const ProductDetailPage = () => {
       return;
     }
     
+    // Convert ExtendedProduct to Product format
+    const productForCart = {
+      ...product,
+      category: product.category || { id: '', name: '', slug: '' },
+      tags: product.tags || [],
+      variants: product.variants || [],
+      brand_id: product.brand_id || null,
+      sku: product.sku || null,
+      gender: product.gender || null,
+      release_date: product.release_date || null,
+      is_limited_edition: product.is_limited_edition || null,
+      average_rating: product.average_rating || null,
+      review_count: product.review_count || 0,
+      meta_title: product.meta_title || null,
+      meta_description: product.meta_description || null
+    };
+    
     if (selectedVariant) {
-      addToCart(product, selectedVariant, quantity);
+      addToCart(productForCart, selectedVariant, quantity);
     } else {
       // Use default variant if none selected
       const defaultVariant = {
@@ -77,7 +94,7 @@ const ProductDetailPage = () => {
         price: product.price,
         stock: 100
       };
-      addToCart(product, defaultVariant, quantity);
+      addToCart(productForCart, defaultVariant, quantity);
     }
   };
 
@@ -92,7 +109,24 @@ const ProductDetailPage = () => {
       return;
     }
     
-    addToWishlist(product);
+    // Convert ExtendedProduct to Product format
+    const productForWishlist = {
+      ...product,
+      category: product.category || { id: '', name: '', slug: '' },
+      tags: product.tags || [],
+      variants: product.variants || [],
+      brand_id: product.brand_id || null,
+      sku: product.sku || null,
+      gender: product.gender || null,
+      release_date: product.release_date || null,
+      is_limited_edition: product.is_limited_edition || null,
+      average_rating: product.average_rating || null,
+      review_count: product.review_count || 0,
+      meta_title: product.meta_title || null,
+      meta_description: product.meta_description || null
+    };
+    
+    addToWishlist(productForWishlist);
   };
 
   const isProductInWishlist = isInWishlist(product.id);
@@ -104,6 +138,16 @@ const ProductDetailPage = () => {
     if (['t-shirts', 'hoodies', 'pants'].includes(category)) return 'clothing';
     return 'accessories';
   };
+
+  // Convert reviews to expected format for ProductReviews component
+  const convertedReviews = (product.reviews || []).map(review => ({
+    id: review.id,
+    userId: review.user_id,
+    userName: review.userName || 'Anonymous',
+    rating: review.rating,
+    comment: review.review_text || '',
+    date: review.created_at
+  }));
 
   return (
     <PageLayout>
@@ -309,7 +353,7 @@ const ProductDetailPage = () => {
             
             <TabsContent value="reviews" className="pt-6">
               <ProductReviews 
-                reviews={product.reviews || []}
+                reviews={convertedReviews}
                 productId={product.id}
               />
             </TabsContent>

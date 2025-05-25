@@ -5,7 +5,7 @@ import PageLayout from '@/components/layout/PageLayout';
 import ProductGrid from '@/components/products/ProductGrid';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
-import { Product } from '@/lib/types';
+import { Product } from '@/types/product';
 import { getUserWishlist } from '@/lib/services/wishlistService';
 import { Heart } from 'lucide-react';
 
@@ -19,7 +19,31 @@ const WishlistPage = () => {
       setIsLoading(true);
       try {
         const products = await getUserWishlist();
-        setLocalWishlist(products);
+        // Convert ExtendedProduct to Product format
+        const convertedProducts = products.map(product => ({
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          description: product.description,
+          price: product.price,
+          images: product.images,
+          category: product.category || { id: '', name: '', slug: '' },
+          tags: product.tags || [],
+          variants: product.variants || [],
+          featured: product.featured,
+          new: product.new,
+          rating: product.rating,
+          reviews: (product.reviews || []).map(review => ({
+            id: review.id,
+            userId: review.user_id,
+            userName: review.userName || 'Anonymous',
+            rating: review.rating,
+            comment: review.review_text || '',
+            date: review.created_at
+          }))
+        })) as Product[];
+        
+        setLocalWishlist(convertedProducts);
       } catch (error) {
         console.error("Error fetching wishlist:", error);
       } finally {
@@ -29,14 +53,6 @@ const WishlistPage = () => {
 
     fetchWishlist();
   }, []);
-
-  // Convert Product[] to the expected format for ProductGrid
-  const wishlistProducts = localWishlist.map(product => ({
-    ...product,
-    category: product.category || { id: '', name: '', slug: '' },
-    tags: product.tags || [],
-    variants: product.variants || []
-  }));
 
   return (
     <PageLayout>
@@ -60,7 +76,7 @@ const WishlistPage = () => {
           </div>
         ) : (
           <>
-            <ProductGrid products={wishlistProducts} />
+            <ProductGrid products={localWishlist} />
             {localWishlist.length > 0 && (
               <div className="text-center mt-8">
                 <Button variant="outline" asChild className="mr-4">

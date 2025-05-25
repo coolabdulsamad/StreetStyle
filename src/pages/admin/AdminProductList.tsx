@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -236,8 +235,7 @@ const AdminProductList: React.FC = () => {
                     <PaginationItem>
                       <PaginationPrevious 
                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                        disabled={currentPage === 1}
-                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                       />
                     </PaginationItem>
                     
@@ -263,6 +261,7 @@ const AdminProductList: React.FC = () => {
                           <PaginationLink
                             onClick={() => setCurrentPage(pageNumber)}
                             isActive={pageNumber === currentPage}
+                            className="cursor-pointer"
                           >
                             {pageNumber}
                           </PaginationLink>
@@ -278,6 +277,7 @@ const AdminProductList: React.FC = () => {
                         <PaginationItem>
                           <PaginationLink 
                             onClick={() => setCurrentPage(totalPages)}
+                            className="cursor-pointer"
                           >
                             {totalPages}
                           </PaginationLink>
@@ -288,8 +288,7 @@ const AdminProductList: React.FC = () => {
                     <PaginationItem>
                       <PaginationNext 
                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                        disabled={currentPage === totalPages}
-                        className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+                        className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                       />
                     </PaginationItem>
                   </PaginationContent>
