@@ -5,22 +5,32 @@ import { getUserWishlist, addToWishlist, removeFromWishlist } from '@/lib/servic
 import { toast } from 'sonner';
 
 export type CartItem = {
+  id: string;
   product: Product;
+  variant: {
+    id: string;
+    name: string;
+    price: number;
+    stock: number;
+  };
   quantity: number;
-  size?: string;
-  color?: string;
 }
 
 export type CartContextType = {
   cart: CartItem[];
+  items: CartItem[];
   wishlist: Product[];
-  addToCart: (product: Product, quantity?: number, size?: string, color?: string) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  addToCart: (product: Product, variant?: any, quantity?: number) => void;
+  removeFromCart: (itemId: string) => void;
+  updateQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => void;
   cartTotal: number;
+  total: number;
   cartCount: number;
+  totalItems: number;
   toggleWishlist: (product: Product) => Promise<void>;
+  addToWishlist: (product: Product) => Promise<void>;
+  removeFromWishlist: (productId: string) => Promise<void>;
   isInWishlist: (productId: string) => boolean;
 };
 
@@ -60,13 +70,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
   
-  const addToCart = (product: Product, quantity = 1, size?: string, color?: string) => {
+  const addToCart = (product: Product, variant?: any, quantity = 1) => {
+    // Use default variant if none provided
+    const selectedVariant = variant || {
+      id: 'default',
+      name: 'Default',
+      price: product.price,
+      stock: 100
+    };
+
     setCart(prevCart => {
       // Check if item is already in cart
       const existingItemIndex = prevCart.findIndex(
-        item => item.product.id === product.id && 
-                item.size === size && 
-                item.color === color
+        item => item.product.id === product.id && item.variant.id === selectedVariant.id
       );
       
       if (existingItemIndex > -1) {
@@ -77,26 +93,32 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return updatedCart;
       } else {
         // Add new item to cart
+        const newItem: CartItem = {
+          id: `${product.id}-${selectedVariant.id}`,
+          product,
+          variant: selectedVariant,
+          quantity
+        };
         toast.success('Added to cart');
-        return [...prevCart, { product, quantity, size, color }];
+        return [...prevCart, newItem];
       }
     });
   };
   
-  const removeFromCart = (productId: string) => {
-    setCart(prevCart => prevCart.filter(item => item.product.id !== productId));
+  const removeFromCart = (itemId: string) => {
+    setCart(prevCart => prevCart.filter(item => item.id !== itemId));
     toast.info('Removed from cart');
   };
   
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (itemId: string, quantity: number) => {
     if (quantity <= 0) {
-      removeFromCart(productId);
+      removeFromCart(itemId);
       return;
     }
     
     setCart(prevCart => 
       prevCart.map(item => 
-        item.product.id === productId 
+        item.id === itemId 
           ? { ...item, quantity } 
           : item
       )
@@ -109,11 +131,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
   
   const cartTotal = cart.reduce(
-    (total, item) => total + item.product.price * item.quantity, 
+    (total, item) => total + item.variant.price * item.quantity, 
     0
   );
-  
+
+  const total = cartTotal;
+  const items = cart;
   const cartCount = cart.reduce((count, item) => count + item.quantity, 0);
+  const totalItems = cartCount;
   
   const toggleWishlist = async (product: Product) => {
     const isProductInWishlist = isInWishlist(product.id);
@@ -135,6 +160,28 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.error('Failed to update wishlist');
     }
   };
+
+  const addToWishlistMethod = async (product: Product) => {
+    try {
+      await addToWishlist(product.id);
+      setWishlist(prev => [...prev, { ...product, is_in_wishlist: true }]);
+      toast.success('Added to wishlist');
+    } catch (error) {
+      console.error('Error adding to wishlist:', error);
+      toast.error('Failed to add to wishlist');
+    }
+  };
+
+  const removeFromWishlistMethod = async (productId: string) => {
+    try {
+      await removeFromWishlist(productId);
+      setWishlist(prev => prev.filter(item => item.id !== productId));
+      toast.info('Removed from wishlist');
+    } catch (error) {
+      console.error('Error removing from wishlist:', error);
+      toast.error('Failed to remove from wishlist');
+    }
+  };
   
   const isInWishlist = (productId: string) => {
     return wishlist.some(item => item.id === productId);
@@ -142,15 +189,20 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   return (
     <CartContext.Provider value={{ 
-      cart, 
+      cart,
+      items,
       wishlist,
       addToCart, 
       removeFromCart, 
       updateQuantity, 
       clearCart, 
-      cartTotal, 
+      cartTotal,
+      total,
       cartCount,
+      totalItems,
       toggleWishlist,
+      addToWishlist: addToWishlistMethod,
+      removeFromWishlist: removeFromWishlistMethod,
       isInWishlist
     }}>
       {children}

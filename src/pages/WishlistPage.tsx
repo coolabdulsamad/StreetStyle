@@ -30,6 +30,14 @@ const WishlistPage = () => {
     fetchWishlist();
   }, []);
 
+  // Convert Product[] to the expected format for ProductGrid
+  const wishlistProducts = localWishlist.map(product => ({
+    ...product,
+    category: product.category || { id: '', name: '', slug: '' },
+    tags: product.tags || [],
+    variants: product.variants || []
+  }));
+
   return (
     <PageLayout>
       <div className="container py-8">
@@ -52,7 +60,7 @@ const WishlistPage = () => {
           </div>
         ) : (
           <>
-            <ProductGrid products={localWishlist} />
+            <ProductGrid products={wishlistProducts} />
             {localWishlist.length > 0 && (
               <div className="text-center mt-8">
                 <Button variant="outline" asChild className="mr-4">

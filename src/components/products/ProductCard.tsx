@@ -12,17 +12,30 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  const { addToWishlist, isInWishlist, removeFromWishlist } = useCart();
+  const { toggleWishlist, isInWishlist } = useCart();
   const inWishlist = isInWishlist(product.id);
 
-  const handleWishlistToggle = (e: React.MouseEvent) => {
+  const handleWishlistToggle = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (inWishlist) {
-      removeFromWishlist(product.id);
-    } else {
-      addToWishlist(product);
-    }
+    
+    // Convert product to the format expected by toggleWishlist
+    const productForWishlist = {
+      ...product,
+      brand_id: null,
+      sku: null,
+      gender: null,
+      release_date: null,
+      is_limited_edition: null,
+      average_rating: null,
+      review_count: 0,
+      meta_title: null,
+      meta_description: null,
+      tags: product.tags || [],
+      variants: product.variants || []
+    };
+    
+    await toggleWishlist(productForWishlist);
   };
 
   return (

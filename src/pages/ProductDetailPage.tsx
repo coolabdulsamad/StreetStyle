@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
-import { Product, ProductVariant } from '@/types/product';
-import { getProduct } from '@/lib/data';
+import { ExtendedProduct } from '@/lib/types';
+import { getProductBySlug } from '@/lib/services/productService';
 import { formatPrice } from '@/lib/utils';
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,8 +23,8 @@ interface Params extends Record<string, string | undefined> {
 }
 
 const ProductDetailPage = () => {
-  const [product, setProduct] = useState<Product | null>(null);
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [product, setProduct] = useState<ExtendedProduct | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { slug } = useParams<Params>();
@@ -36,7 +36,7 @@ const ProductDetailPage = () => {
     if (!slug) return;
 
     const fetchProduct = async () => {
-      const productData = await getProduct(slug);
+      const productData = await getProductBySlug(slug);
       setProduct(productData);
       if (productData && productData.images.length > 0) {
         setSelectedImage(productData.images[0]);
@@ -47,7 +47,7 @@ const ProductDetailPage = () => {
   }, [slug]);
 
   useEffect(() => {
-    if (product && product.variants.length > 0) {
+    if (product && product.variants && product.variants.length > 0) {
       setSelectedVariant(product.variants[0]);
     }
   }, [product]);
@@ -70,7 +70,14 @@ const ProductDetailPage = () => {
     if (selectedVariant) {
       addToCart(product, selectedVariant, quantity);
     } else {
-      toast.error("Please select a variant");
+      // Use default variant if none selected
+      const defaultVariant = {
+        id: 'default',
+        name: 'Default',
+        price: product.price,
+        stock: 100
+      };
+      addToCart(product, defaultVariant, quantity);
     }
   };
 
@@ -92,7 +99,7 @@ const ProductDetailPage = () => {
   
   // Determine product type for size guide
   const getProductType = (): 'footwear' | 'clothing' | 'accessories' => {
-    const category = product.category.slug;
+    const category = product.category?.slug || '';
     if (category === 'sneakers') return 'footwear';
     if (['t-shirts', 'hoodies', 'pants'].includes(category)) return 'clothing';
     return 'accessories';
@@ -147,8 +154,8 @@ const ProductDetailPage = () => {
             
             {/* Category & Tags */}
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-sm text-muted-foreground">{product.category.name}</span>
-              {product.tags.length > 0 && (
+              <span className="text-sm text-muted-foreground">{product.category?.name}</span>
+              {product.tags && product.tags.length > 0 && (
                 <>
                   <span className="text-muted-foreground">•</span>
                   <div className="flex flex-wrap gap-1">
@@ -167,9 +174,9 @@ const ProductDetailPage = () => {
             {/* Price */}
             <div className="mb-6">
               <span className="text-2xl font-bold">
-                {formatPrice(selectedVariant?.price || product.variants[0]?.price)}
+                {formatPrice(selectedVariant?.price || product.price)}
               </span>
-              {product.variants.length > 1 && selectedVariant && (
+              {product.variants && product.variants.length > 1 && selectedVariant && (
                 <span className="ml-2 text-sm text-muted-foreground">
                   {selectedVariant.name}
                 </span>
@@ -177,7 +184,7 @@ const ProductDetailPage = () => {
             </div>
 
             {/* Variant Selection */}
-            {product.variants.length > 1 && (
+            {product.variants && product.variants.length > 1 && (
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
                   <Label htmlFor="variants" className="text-sm font-medium">
@@ -279,10 +286,10 @@ const ProductDetailPage = () => {
               <div className="prose max-w-none">
                 <h3>Product Details</h3>
                 <ul>
-                  <li>Category: {product.category.name}</li>
+                  <li>Category: {product.category?.name}</li>
                   <li>Material: Premium quality materials</li>
                   <li>Style: Contemporary streetwear</li>
-                  {product.tags.length > 0 && (
+                  {product.tags && product.tags.length > 0 && (
                     <li>Tags: {product.tags.map(tag => tag.name).join(', ')}</li>
                   )}
                 </ul>
