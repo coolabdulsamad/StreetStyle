@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import { ExtendedProduct } from '@/lib/types';
+import { Product } from '@/types/product';
 import { getProductBySlug } from '@/lib/services/productService';
 import { formatPrice } from '@/lib/utils';
 import { Button } from "@/components/ui/button"
@@ -56,6 +57,37 @@ const ProductDetailPage = () => {
     return <PageLayout><div>Loading...</div></PageLayout>;
   }
 
+  // Helper function to convert ExtendedProduct to Product
+  const convertToProduct = (extendedProduct: ExtendedProduct): Product => {
+    const fullCategory = {
+      id: extendedProduct.category?.id || '',
+      name: extendedProduct.category?.name || '',
+      slug: extendedProduct.category?.slug || '',
+      description: extendedProduct.category?.description || null,
+      parent_id: extendedProduct.category?.parent_id || null,
+      image_url: extendedProduct.category?.image_url || null,
+      is_active: extendedProduct.category?.is_active || true,
+      display_order: extendedProduct.category?.display_order || 0,
+      created_at: extendedProduct.category?.created_at || new Date().toISOString()
+    };
+
+    return {
+      ...extendedProduct,
+      category: fullCategory,
+      tags: extendedProduct.tags || [],
+      variants: extendedProduct.variants || [],
+      brand_id: extendedProduct.brand_id || null,
+      sku: extendedProduct.sku || null,
+      gender: extendedProduct.gender || null,
+      release_date: extendedProduct.release_date || null,
+      is_limited_edition: extendedProduct.is_limited_edition || null,
+      average_rating: extendedProduct.average_rating || null,
+      review_count: extendedProduct.review_count || 0,
+      meta_title: extendedProduct.meta_title || null,
+      meta_description: extendedProduct.meta_description || null
+    };
+  };
+
   const handleAddToCart = () => {
     if (!user) {
       toast.info("Please log in to add items to your cart", {
@@ -67,22 +99,7 @@ const ProductDetailPage = () => {
       return;
     }
     
-    // Convert ExtendedProduct to Product format
-    const productForCart = {
-      ...product,
-      category: product.category || { id: '', name: '', slug: '' },
-      tags: product.tags || [],
-      variants: product.variants || [],
-      brand_id: product.brand_id || null,
-      sku: product.sku || null,
-      gender: product.gender || null,
-      release_date: product.release_date || null,
-      is_limited_edition: product.is_limited_edition || null,
-      average_rating: product.average_rating || null,
-      review_count: product.review_count || 0,
-      meta_title: product.meta_title || null,
-      meta_description: product.meta_description || null
-    };
+    const productForCart = convertToProduct(product);
     
     if (selectedVariant) {
       addToCart(productForCart, selectedVariant, quantity);
@@ -92,7 +109,8 @@ const ProductDetailPage = () => {
         id: 'default',
         name: 'Default',
         price: product.price,
-        stock: 100
+        stock: 100,
+        sku: 'default'
       };
       addToCart(productForCart, defaultVariant, quantity);
     }
@@ -109,23 +127,7 @@ const ProductDetailPage = () => {
       return;
     }
     
-    // Convert ExtendedProduct to Product format
-    const productForWishlist = {
-      ...product,
-      category: product.category || { id: '', name: '', slug: '' },
-      tags: product.tags || [],
-      variants: product.variants || [],
-      brand_id: product.brand_id || null,
-      sku: product.sku || null,
-      gender: product.gender || null,
-      release_date: product.release_date || null,
-      is_limited_edition: product.is_limited_edition || null,
-      average_rating: product.average_rating || null,
-      review_count: product.review_count || 0,
-      meta_title: product.meta_title || null,
-      meta_description: product.meta_description || null
-    };
-    
+    const productForWishlist = convertToProduct(product);
     addToWishlist(productForWishlist);
   };
 

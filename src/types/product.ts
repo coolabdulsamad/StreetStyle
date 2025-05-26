@@ -3,6 +3,12 @@ export type ProductCategory = {
   id: string;
   name: string;
   slug: string;
+  description?: string | null;
+  parent_id?: string | null;
+  image_url?: string | null;
+  is_active?: boolean;
+  display_order?: number;
+  created_at?: string;
 };
 
 export type ProductTag = {
@@ -43,4 +49,15 @@ export type Product = {
   new?: boolean;
   rating?: number;
   reviews?: ProductReview[];
+  
+  // Additional fields for compatibility
+  brand_id?: string | null;
+  sku?: string | null;
+  gender?: 'men' | 'women' | 'unisex' | 'kids' | null;
+  release_date?: string | null;
+  is_limited_edition?: boolean | null;
+  average_rating?: number | null;
+  review_count?: number;
+  meta_title?: string | null;
+  meta_description?: string | null;
 };

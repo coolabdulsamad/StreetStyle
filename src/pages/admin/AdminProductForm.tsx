@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -75,7 +76,7 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ productId }) => {
     const fetchLookupData = async () => {
       // Fetch categories
       const { data: categoriesData, error: categoriesError } = await supabase
-        .from('categories' as any)
+        .from('categories')
         .select('*')
         .order('name', { ascending: true });
       
@@ -86,7 +87,7 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ productId }) => {
         setCategories(categoriesData || []);
       }
       
-      // Fetch brands (for now we'll use categories as brands)
+      // For now we'll use categories as brands since we don't have a brands table
       setBrands(categoriesData || []);
     };
     
@@ -100,8 +101,9 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ productId }) => {
         setIsLoading(true);
         
         try {
+          // First get the product from the new products table structure
           const { data, error } = await supabase
-            .from('products' as any)
+            .from('products')
             .select('*')
             .eq('id', productId)
             .single();
@@ -113,7 +115,7 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ productId }) => {
           
           // Load the product's images
           const { data: imageData, error: imageError } = await supabase
-            .from('product_images' as any)
+            .from('product_images')
             .select('image_url')
             .eq('product_id', productId)
             .order('display_order', { ascending: true });
@@ -122,21 +124,21 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ productId }) => {
             setImageUrls(imageData.map((img: any) => img.image_url));
           }
           
-          // Set form values
+          // Set form values with safe access
           form.reset({
-            name: productData.name,
-            slug: productData.slug,
-            description: productData.description,
-            price: productData.price,
-            category_id: productData.category_id || undefined,
-            brand_id: productData.category_id || undefined, // Using category as brand for now
-            sku: productData.sku || undefined,
-            gender: productData.gender || undefined,
-            is_new: productData.is_new || false,
-            featured: productData.featured || false,
-            is_limited_edition: productData.is_limited_edition || false,
-            meta_title: productData.meta_title || undefined,
-            meta_description: productData.meta_description || undefined,
+            name: productData?.name || '',
+            slug: productData?.slug || '',
+            description: productData?.description || '',
+            price: productData?.price || 0,
+            category_id: productData?.category_id || '',
+            brand_id: productData?.category_id || '', // Using category as brand for now
+            sku: productData?.sku || '',
+            gender: productData?.gender || 'unisex',
+            is_new: productData?.is_new || false,
+            featured: productData?.featured || false,
+            is_limited_edition: productData?.is_limited_edition || false,
+            meta_title: productData?.meta_title || '',
+            meta_description: productData?.meta_description || '',
           });
         } catch (error) {
           console.error('Error fetching product:', error);
@@ -199,10 +201,19 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ productId }) => {
       }
       
       const productData = {
-        ...data,
-        // Format data for Supabase
-        new: data.is_new || false,
-        release_date: data.is_new ? new Date().toISOString() : null,
+        name: data.name,
+        slug: data.slug,
+        description: data.description,
+        price: data.price,
+        category_id: data.category_id,
+        brand_id: data.brand_id,
+        sku: data.sku,
+        gender: data.gender,
+        is_new: data.is_new || false,
+        featured: data.featured || false,
+        is_limited_edition: data.is_limited_edition || false,
+        meta_title: data.meta_title,
+        meta_description: data.meta_description,
         updated_at: new Date().toISOString(),
       };
       
@@ -211,8 +222,8 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ productId }) => {
       if (isEditMode) {
         // Update existing product
         const { data: updatedProduct, error } = await supabase
-          .from('products' as any)
-          .update(productData as any)
+          .from('products')
+          .update(productData)
           .eq('id', product!.id)
           .select()
           .single();
@@ -224,8 +235,8 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ productId }) => {
       } else {
         // Create new product
         const { data: newProduct, error } = await supabase
-          .from('products' as any)
-          .insert([productData as any])
+          .from('products')
+          .insert([productData])
           .select()
           .single();
         
@@ -248,7 +259,7 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ productId }) => {
           }));
           
           const { error } = await supabase
-            .from('product_images' as any)
+            .from('product_images')
             .insert(imageInserts);
           
           if (error) {

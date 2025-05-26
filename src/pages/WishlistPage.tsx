@@ -27,7 +27,17 @@ const WishlistPage = () => {
           description: product.description,
           price: product.price,
           images: product.images,
-          category: product.category || { id: '', name: '', slug: '' },
+          category: {
+            id: product.category?.id || '',
+            name: product.category?.name || '',
+            slug: product.category?.slug || '',
+            description: product.category?.description || null,
+            parent_id: product.category?.parent_id || null,
+            image_url: product.category?.image_url || null,
+            is_active: product.category?.is_active || true,
+            display_order: product.category?.display_order || 0,
+            created_at: product.category?.created_at || new Date().toISOString()
+          },
           tags: product.tags || [],
           variants: product.variants || [],
           featured: product.featured,
@@ -40,7 +50,16 @@ const WishlistPage = () => {
             rating: review.rating,
             comment: review.review_text || '',
             date: review.created_at
-          }))
+          })),
+          brand_id: product.brand_id || null,
+          sku: product.sku || null,
+          gender: product.gender || null,
+          release_date: product.release_date || null,
+          is_limited_edition: product.is_limited_edition || null,
+          average_rating: product.average_rating || null,
+          review_count: product.review_count || 0,
+          meta_title: product.meta_title || null,
+          meta_description: product.meta_description || null
         })) as Product[];
         
         setLocalWishlist(convertedProducts);
