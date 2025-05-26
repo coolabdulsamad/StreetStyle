@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import { ExtendedProduct } from '@/lib/types';
-import { Product } from '@/types/product';
+import { Product, ProductReview } from '@/types/product';
 import { getProductBySlug } from '@/lib/services/productService';
 import { formatPrice } from '@/lib/utils';
 import { Button } from "@/components/ui/button"
@@ -71,11 +71,27 @@ const ProductDetailPage = () => {
       created_at: extendedProduct.category?.created_at || new Date().toISOString()
     };
 
+    // Convert reviews to Product type format
+    const convertedReviews: ProductReview[] = (extendedProduct.reviews || []).map(review => ({
+      id: review.id,
+      product_id: review.product_id,
+      user_id: review.user_id,
+      userName: review.userName || 'Anonymous',
+      rating: review.rating,
+      review_text: review.review_text || '',
+      verified_purchase: review.verified_purchase || false,
+      helpful_votes: review.helpful_votes || 0,
+      images: review.images || [],
+      created_at: review.created_at,
+      updated_at: review.updated_at || review.created_at
+    }));
+
     return {
       ...extendedProduct,
       category: fullCategory,
       tags: extendedProduct.tags || [],
       variants: extendedProduct.variants || [],
+      reviews: convertedReviews,
       brand_id: extendedProduct.brand_id || null,
       sku: extendedProduct.sku || null,
       gender: extendedProduct.gender || null,

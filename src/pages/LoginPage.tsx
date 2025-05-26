@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { z } from "zod";
@@ -12,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { toast } from 'sonner';
+import { Shield } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -41,15 +43,20 @@ const LoginPage = () => {
     return location.state?.defaultTab || "login";
   });
 
+  // Check if this is an admin login attempt
+  const isAdminLogin = location.state?.isAdmin;
+
   // Get the return URL from location state or default to home page
   const from = location.state?.from?.pathname || location.state?.from || "/";
 
   // Redirect if user is already logged in
   useEffect(() => {
     if (user) {
-      navigate(from, { replace: true });
+      // If admin login, redirect to admin dashboard, otherwise go to original destination
+      const redirectPath = isAdminLogin ? "/admin" : from;
+      navigate(redirectPath, { replace: true });
     }
-  }, [user, navigate, from]);
+  }, [user, navigate, from, isAdminLogin]);
 
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -102,9 +109,15 @@ const LoginPage = () => {
       <div className="container max-w-md py-12">
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">Account</CardTitle>
+            <CardTitle className="text-2xl flex items-center">
+              {isAdminLogin && <Shield className="w-6 h-6 mr-2 text-blue-600" />}
+              {isAdminLogin ? "Admin Access" : "Account"}
+            </CardTitle>
             <CardDescription>
-              Login or create a new account to continue
+              {isAdminLogin 
+                ? "Login with admin credentials to access the dashboard"
+                : "Login or create a new account to continue"
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -145,8 +158,13 @@ const LoginPage = () => {
                       )}
                     />
                     <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Logging in..." : "Login"}
+                      {isLoading ? "Logging in..." : (isAdminLogin ? "Admin Login" : "Login")}
                     </Button>
+                    {isAdminLogin && (
+                      <p className="text-sm text-muted-foreground text-center">
+                        Use your admin credentials to access the dashboard
+                      </p>
+                    )}
                   </form>
                 </Form>
               </TabsContent>

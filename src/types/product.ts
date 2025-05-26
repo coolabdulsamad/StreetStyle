@@ -3,7 +3,7 @@ export type ProductCategory = {
   id: string;
   name: string;
   slug: string;
-  description?: string | null;
+  description: string | null;
   parent_id?: string | null;
   image_url?: string | null;
   is_active?: boolean;
@@ -28,11 +28,16 @@ export type ProductVariant = {
 
 export type ProductReview = {
   id: string;
-  userId: string;
-  userName: string;
+  product_id: string;
+  user_id: string;
+  userName?: string;
   rating: number;
-  comment: string;
-  date: string;
+  review_text: string | null;
+  verified_purchase: boolean;
+  helpful_votes: number;
+  images: string[] | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type Product = {

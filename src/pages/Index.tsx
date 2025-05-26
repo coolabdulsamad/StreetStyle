@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { CATEGORIES, getFeaturedProducts, getNewProducts } from '@/data/products';
 import { Link } from 'react-router-dom';
 import TrendingSection from '@/components/products/TrendingSection';
+import { Shield } from 'lucide-react';
 
 const Index = () => {
   const featuredProducts = getFeaturedProducts();
@@ -13,6 +14,16 @@ const Index = () => {
 
   return (
     <PageLayout>
+      {/* Admin Access Button */}
+      <div className="fixed top-4 right-4 z-50">
+        <Button asChild variant="outline" size="sm" className="bg-white/90 backdrop-blur-sm border-gray-300 hover:bg-gray-50">
+          <Link to="/login" state={{ defaultTab: "login", isAdmin: true }}>
+            <Shield className="w-4 h-4 mr-2" />
+            Admin Login
+          </Link>
+        </Button>
+      </div>
+
       {/* Hero Section */}
       <section className="relative">
         <div className="relative bg-brand-dark">
