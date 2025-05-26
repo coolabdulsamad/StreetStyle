@@ -19,7 +19,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     e.preventDefault();
     e.stopPropagation();
     
-    await toggleWishlist(product);
+    // Convert to the format expected by CartContext
+    const cartProduct = {
+      ...product,
+      category: {
+        ...product.category,
+        parent_id: product.category.parent_id || null,
+        image_url: product.category.image_url || null,
+        is_active: product.category.is_active ?? true,
+        display_order: product.category.display_order ?? 0,
+        created_at: product.category.created_at || new Date().toISOString()
+      }
+    };
+    
+    await toggleWishlist(cartProduct);
   };
 
   return (

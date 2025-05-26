@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { toast } from 'sonner';
 import { Shield } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -25,6 +26,7 @@ const registerSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(6, "Please confirm your password"),
+  isAdmin: z.boolean().optional(),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -75,6 +77,7 @@ const LoginPage = () => {
       email: "",
       password: "",
       confirmPassword: "",
+      isAdmin: false,
     },
   });
 
@@ -94,7 +97,7 @@ const LoginPage = () => {
   const handleRegister = async (values: RegisterFormValues) => {
     setIsLoading(true);
     try {
-      await registerUser(values.email, values.password, values.name);
+      await registerUser(values.email, values.password, values.name, values.isAdmin);
       toast.success("Registration successful! You can now login.");
       setActiveTab("login");
     } catch (error) {
@@ -222,6 +225,25 @@ const LoginPage = () => {
                             <Input type="password" placeholder="••••••••" {...field} />
                           </FormControl>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="isAdmin"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>
+                              Register as Admin
+                            </FormLabel>
+                          </div>
                         </FormItem>
                       )}
                     />

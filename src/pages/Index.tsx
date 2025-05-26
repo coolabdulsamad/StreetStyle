@@ -14,8 +14,8 @@ const Index = () => {
 
   return (
     <PageLayout>
-      {/* Admin Access Button */}
-      <div className="fixed top-4 right-4 z-50">
+      {/* Admin Access Button - positioned better */}
+      <div className="fixed top-20 right-4 z-50">
         <Button asChild variant="outline" size="sm" className="bg-white/90 backdrop-blur-sm border-gray-300 hover:bg-gray-50">
           <Link to="/login" state={{ defaultTab: "login", isAdmin: true }}>
             <Shield className="w-4 h-4 mr-2" />

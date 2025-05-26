@@ -21,7 +21,7 @@ type AuthContextType = {
   isLoading: boolean;
   isAdmin: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (email: string, password: string, name: string, isAdmin?: boolean) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
 };
@@ -141,7 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (email: string, password: string, name: string) => {
+  const register = async (email: string, password: string, name: string, isAdmin: boolean = false) => {
     setIsLoading(true);
     try {
       // Split name into first name and last name
@@ -149,7 +149,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const firstName = nameParts[0] || '';
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -161,7 +161,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (error) throw error;
-      toast.success("Registration successful! Please verify your email.");
+      
+      // If admin registration and user was created, add admin role
+      if (isAdmin && data.user) {
+        try {
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert({
+              user_id: data.user.id,
+              role: 'admin'
+            });
+          
+          if (roleError) {
+            console.error('Error adding admin role:', roleError);
+            toast.error("Registration successful but failed to assign admin role");
+          } else {
+            toast.success("Admin registration successful! Please verify your email.");
+          }
+        } catch (roleError) {
+          console.error('Error adding admin role:', roleError);
+          toast.error("Registration successful but failed to assign admin role");
+        }
+      } else {
+        toast.success("Registration successful! Please verify your email.");
+      }
     } catch (error: any) {
       toast.error(`Registration failed: ${error.message}`);
       throw error;
