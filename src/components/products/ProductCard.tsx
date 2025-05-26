@@ -19,11 +19,21 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Convert to the format expected by CartContext
+    // Convert to the format expected by CartContext with all required fields
     const cartProduct = {
       ...product,
+      brand_id: product.brand_id || null,
+      sku: product.sku || null,
+      gender: product.gender || null,
+      release_date: product.release_date || null,
+      is_limited_edition: product.is_limited_edition || null,
+      average_rating: product.average_rating || null,
+      review_count: product.review_count || 0,
+      meta_title: product.meta_title || null,
+      meta_description: product.meta_description || null,
       category: {
         ...product.category,
+        description: product.category.description || '',
         parent_id: product.category.parent_id || null,
         image_url: product.category.image_url || null,
         is_active: product.category.is_active ?? true,

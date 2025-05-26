@@ -3,7 +3,7 @@ export type ProductCategory = {
   id: string;
   name: string;
   slug: string;
-  description: string | null;
+  description: string;
   parent_id?: string | null;
   image_url?: string | null;
   is_active?: boolean;

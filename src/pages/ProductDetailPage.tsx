@@ -1,409 +1,317 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { toast } from "sonner";
-import { ExtendedProduct } from '@/lib/types';
-import { Product, ProductReview } from '@/types/product';
-import { getProductBySlug } from '@/lib/services/productService';
-import { formatPrice } from '@/lib/utils';
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 import PageLayout from '@/components/layout/PageLayout';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Heart, Star, ShoppingCart, Truck, Shield, RotateCcw } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
-import { useAuth } from '@/contexts/AuthContext';
-import SizeGuideModal from '@/components/products/SizeGuideModal';
+import { PRODUCTS } from '@/data/products';
+import { Product, ProductReview } from '@/types/product';
 import ProductReviews from '@/components/products/ProductReviews';
-import StyleInspirationSection from '@/components/products/StyleInspirationSection';
-
-interface Params extends Record<string, string | undefined> {
-  slug?: string;
-}
+import { toast } from 'sonner';
 
 const ProductDetailPage = () => {
-  const [product, setProduct] = useState<ExtendedProduct | null>(null);
-  const [selectedVariant, setSelectedVariant] = useState<any>(null);
+  const { slug } = useParams<{ slug: string }>();
+  const { addToCart, toggleWishlist, isInWishlist } = useCart();
+  const [selectedSize, setSelectedSize] = useState<string>('');
+  const [selectedColor, setSelectedColor] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const { slug } = useParams<Params>();
-  const { addToCart, addToWishlist, isInWishlist } = useCart();
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [product, setProduct] = useState<Product | null>(null);
 
   useEffect(() => {
-    if (!slug) return;
-
-    const fetchProduct = async () => {
-      const productData = await getProductBySlug(slug);
-      setProduct(productData);
-      if (productData && productData.images.length > 0) {
-        setSelectedImage(productData.images[0]);
-      }
-    };
-
-    fetchProduct();
+    const foundProduct = PRODUCTS.find(p => p.slug === slug);
+    if (foundProduct) {
+      setProduct(foundProduct);
+    }
   }, [slug]);
 
-  useEffect(() => {
-    if (product && product.variants && product.variants.length > 0) {
-      setSelectedVariant(product.variants[0]);
-    }
-  }, [product]);
-
   if (!product) {
-    return <PageLayout><div>Loading...</div></PageLayout>;
+    return (
+      <PageLayout>
+        <div className="container py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">Product not found</h1>
+            <p className="text-gray-600">The product you're looking for doesn't exist.</p>
+          </div>
+        </div>
+      </PageLayout>
+    );
   }
 
-  // Helper function to convert ExtendedProduct to Product
-  const convertToProduct = (extendedProduct: ExtendedProduct): Product => {
-    const fullCategory = {
-      id: extendedProduct.category?.id || '',
-      name: extendedProduct.category?.name || '',
-      slug: extendedProduct.category?.slug || '',
-      description: extendedProduct.category?.description || null,
-      parent_id: extendedProduct.category?.parent_id || null,
-      image_url: extendedProduct.category?.image_url || null,
-      is_active: extendedProduct.category?.is_active || true,
-      display_order: extendedProduct.category?.display_order || 0,
-      created_at: extendedProduct.category?.created_at || new Date().toISOString()
-    };
-
-    // Convert reviews to Product type format
-    const convertedReviews: ProductReview[] = (extendedProduct.reviews || []).map(review => ({
-      id: review.id,
-      product_id: review.product_id,
-      user_id: review.user_id,
-      userName: review.userName || 'Anonymous',
-      rating: review.rating,
-      review_text: review.review_text || '',
-      verified_purchase: review.verified_purchase || false,
-      helpful_votes: review.helpful_votes || 0,
-      images: review.images || [],
-      created_at: review.created_at,
-      updated_at: review.updated_at || review.created_at
-    }));
-
-    return {
-      ...extendedProduct,
-      category: fullCategory,
-      tags: extendedProduct.tags || [],
-      variants: extendedProduct.variants || [],
-      reviews: convertedReviews,
-      brand_id: extendedProduct.brand_id || null,
-      sku: extendedProduct.sku || null,
-      gender: extendedProduct.gender || null,
-      release_date: extendedProduct.release_date || null,
-      is_limited_edition: extendedProduct.is_limited_edition || null,
-      average_rating: extendedProduct.average_rating || null,
-      review_count: extendedProduct.review_count || 0,
-      meta_title: extendedProduct.meta_title || null,
-      meta_description: extendedProduct.meta_description || null
-    };
+  // Convert product to the format expected by cart
+  const cartProduct = {
+    ...product,
+    brand_id: product.brand_id || null,
+    sku: product.sku || null,
+    gender: product.gender || null,
+    release_date: product.release_date || null,
+    is_limited_edition: product.is_limited_edition || null,
+    average_rating: product.average_rating || null,
+    review_count: product.review_count || 0,
+    meta_title: product.meta_title || null,
+    meta_description: product.meta_description || null,
+    category: {
+      ...product.category,
+      description: product.category.description || '',
+      parent_id: product.category.parent_id || null,
+      image_url: product.category.image_url || null,
+      is_active: product.category.is_active ?? true,
+      display_order: product.category.display_order ?? 0,
+      created_at: product.category.created_at || new Date().toISOString()
+    }
   };
+
+  const inWishlist = isInWishlist(product.id);
 
   const handleAddToCart = () => {
-    if (!user) {
-      toast.info("Please log in to add items to your cart", {
-        action: {
-          label: "Login",
-          onClick: () => navigate('/login'),
-        },
-      });
+    if (product.variants && product.variants.length > 0 && !selectedSize) {
+      toast.error("Please select a size");
       return;
     }
     
-    const productForCart = convertToProduct(product);
-    
-    if (selectedVariant) {
-      addToCart(productForCart, selectedVariant, quantity);
-    } else {
-      // Use default variant if none selected
-      const defaultVariant = {
-        id: 'default',
-        name: 'Default',
-        price: product.price,
-        stock: 100,
-        sku: 'default'
-      };
-      addToCart(productForCart, defaultVariant, quantity);
-    }
+    addToCart(cartProduct, quantity, selectedSize, selectedColor);
+    toast.success("Added to cart!");
   };
 
-  const handleAddToWishlist = () => {
-    if (!user) {
-      toast.info("Please log in to add items to your wishlist", {
-        action: {
-          label: "Login",
-          onClick: () => navigate('/login'),
-        },
-      });
-      return;
-    }
-    
-    const productForWishlist = convertToProduct(product);
-    addToWishlist(productForWishlist);
+  const handleWishlistToggle = () => {
+    toggleWishlist(cartProduct);
+    toast.success(inWishlist ? "Removed from wishlist" : "Added to wishlist");
   };
 
-  const isProductInWishlist = isInWishlist(product.id);
-  
-  // Determine product type for size guide
-  const getProductType = (): 'footwear' | 'clothing' | 'accessories' => {
-    const category = product.category?.slug || '';
-    if (category === 'sneakers') return 'footwear';
-    if (['t-shirts', 'hoodies', 'pants'].includes(category)) return 'clothing';
-    return 'accessories';
+  const handleAddReview = (review: Omit<ProductReview, 'id' | 'created_at' | 'updated_at'>) => {
+    // In a real app, this would make an API call
+    console.log('Adding review:', review);
+    toast.success("Review submitted!");
   };
 
-  // Convert reviews to expected format for ProductReviews component
-  const convertedReviews = (product.reviews || []).map(review => ({
-    id: review.id,
-    userId: review.user_id,
-    userName: review.userName || 'Anonymous',
-    rating: review.rating,
-    comment: review.review_text || '',
-    date: review.created_at
-  }));
+  const renderStars = (rating: number) => {
+    return (
+      <div className="flex items-center space-x-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            className={`h-4 w-4 ${
+              star <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+            }`}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  // Get unique sizes and colors from variants
+  const availableSizes = product.variants ? [...new Set(product.variants.map(v => v.size).filter(Boolean))] : [];
+  const availableColors = product.variants ? [...new Set(product.variants.map(v => v.color).filter(Boolean))] : [];
 
   return (
     <PageLayout>
-      <div className="container py-12">
-        {/* Product Details Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+      <div className="container py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           {/* Product Images */}
           <div className="space-y-4">
-            <div className="aspect-square bg-muted rounded-lg overflow-hidden">
-              <img
-                src={selectedImage || product.images[0]}
+            <div className="aspect-square overflow-hidden rounded-lg bg-gray-100">
+              <img 
+                src={product.images[selectedImageIndex]} 
                 alt={product.name}
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/placeholder.svg";
-                }}
               />
             </div>
-            
-            {/* Thumbnail Gallery */}
-            {product.images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {product.images.map((image, index) => (
-                  <button
-                    key={index}
-                    className={`w-20 h-20 rounded overflow-hidden flex-shrink-0 border-2 ${
-                      selectedImage === image ? 'border-primary' : 'border-transparent'
-                    }`}
-                    onClick={() => setSelectedImage(image)}
-                  >
-                    <img
-                      src={image}
-                      alt={`${product.name} view ${index + 1}`}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/placeholder.svg";
-                      }}
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="grid grid-cols-4 gap-2">
+              {product.images.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedImageIndex(index)}
+                  className={`aspect-square overflow-hidden rounded-md border-2 ${
+                    selectedImageIndex === index ? 'border-primary' : 'border-gray-200'
+                  }`}
+                >
+                  <img 
+                    src={image} 
+                    alt={`${product.name} ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Product Info */}
-          <div>
-            <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-            
-            {/* Category & Tags */}
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-sm text-muted-foreground">{product.category?.name}</span>
-              {product.tags && product.tags.length > 0 && (
-                <>
-                  <span className="text-muted-foreground">•</span>
-                  <div className="flex flex-wrap gap-1">
-                    {product.tags.slice(0, 3).map((tag) => (
-                      <span key={tag.id} className="text-xs bg-muted px-2 py-1 rounded-full">
-                        {tag.name}
-                      </span>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-            
-            <p className="text-gray-600 mb-6">{product.description}</p>
-
-            {/* Price */}
-            <div className="mb-6">
-              <span className="text-2xl font-bold">
-                {formatPrice(selectedVariant?.price || product.price)}
-              </span>
-              {product.variants && product.variants.length > 1 && selectedVariant && (
-                <span className="ml-2 text-sm text-muted-foreground">
-                  {selectedVariant.name}
-                </span>
-              )}
-            </div>
-
-            {/* Variant Selection */}
-            {product.variants && product.variants.length > 1 && (
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <Label htmlFor="variants" className="text-sm font-medium">
-                    Select Variant:
-                  </Label>
-                  <SizeGuideModal productType={getProductType()} />
-                </div>
-                <RadioGroup defaultValue={selectedVariant?.id} className="mt-2">
-                  <div className="grid grid-cols-3 gap-3">
-                    {product.variants.map((variant) => (
-                      <div key={variant.id} className="space-y-0.5">
-                        <RadioGroupItem value={variant.id} id={variant.id} className="aspect-square h-8 w-8 rounded-full bg-muted text-muted-foreground shadow-sm" onClick={() => setSelectedVariant(variant)} />
-                        <Label htmlFor={variant.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                          {variant.name}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </RadioGroup>
+          <div className="space-y-6">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Badge variant="secondary">{product.category.name}</Badge>
+                {product.new && <Badge>New</Badge>}
+                {product.featured && <Badge variant="outline">Featured</Badge>}
               </div>
-            )}
-
-            {/* Quantity Selection */}
-            <div className="mb-6">
-              <Label htmlFor="quantity" className="block text-sm font-medium mb-2">
-                Quantity:
-              </Label>
-              <div className="flex items-center max-w-[150px]">
-                <Button 
-                  type="button"
-                  variant="outline" 
-                  size="icon" 
-                  className="h-9 w-9 rounded-r-none"
-                  onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                >
-                  <span className="sr-only">Decrease</span>
-                  <span className="text-xl">-</span>
-                </Button>
-                <Input
-                  type="number"
-                  id="quantity"
-                  className="h-9 rounded-none text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                  min="1"
-                />
-                <Button 
-                  type="button"
-                  variant="outline" 
-                  size="icon" 
-                  className="h-9 w-9 rounded-l-none"
-                  onClick={() => setQuantity(q => q + 1)}
-                >
-                  <span className="sr-only">Increase</span>
-                  <span className="text-xl">+</span>
-                </Button>
-              </div>
-            </div>
-
-            {/* Product Status */}
-            {selectedVariant && (
-              <div className="mb-6">
-                <div className="flex items-center">
-                  <div className={`w-3 h-3 rounded-full mr-2 ${selectedVariant.stock > 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                  <span className="text-sm">
-                    {selectedVariant.stock > 0 ? 'In Stock' : 'Out of Stock'}
+              <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="flex items-center space-x-2">
+                  {renderStars(product.rating || 0)}
+                  <span className="text-sm text-gray-600">
+                    ({product.review_count || 0} reviews)
                   </span>
                 </div>
               </div>
+              <div className="text-3xl font-bold text-primary mb-4">
+                ${product.price}
+              </div>
+            </div>
+
+            {/* Size Selection */}
+            {availableSizes.length > 0 && (
+              <div>
+                <h3 className="text-lg font-medium mb-3">Size</h3>
+                <div className="grid grid-cols-6 gap-2">
+                  {availableSizes.map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={`py-2 px-3 border rounded-md text-center font-medium ${
+                        selectedSize === size
+                          ? 'border-primary bg-primary text-white'
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
+            {/* Color Selection */}
+            {availableColors.length > 0 && (
+              <div>
+                <h3 className="text-lg font-medium mb-3">Color</h3>
+                <div className="flex flex-wrap gap-2">
+                  {availableColors.map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => setSelectedColor(color)}
+                      className={`py-2 px-4 border rounded-md font-medium ${
+                        selectedColor === color
+                          ? 'border-primary bg-primary text-white'
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                    >
+                      {color}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Quantity */}
+            <div>
+              <h3 className="text-lg font-medium mb-3">Quantity</h3>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-10 h-10 border border-gray-300 rounded-md flex items-center justify-center hover:bg-gray-50"
+                >
+                  -
+                </button>
+                <span className="text-xl font-medium w-12 text-center">{quantity}</span>
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-10 h-10 border border-gray-300 rounded-md flex items-center justify-center hover:bg-gray-50"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
             {/* Action Buttons */}
-            <div className="flex gap-2">
+            <div className="space-y-3">
               <Button 
-                className="flex-1" 
                 onClick={handleAddToCart}
-                disabled={selectedVariant?.stock === 0}
+                className="w-full text-lg py-3"
+                size="lg"
               >
+                <ShoppingCart className="w-5 h-5 mr-2" />
                 Add to Cart
               </Button>
-              <Button variant="outline" className="flex-1" onClick={handleAddToWishlist}>
-                <Heart className="mr-2 h-4 w-4" />
-                {isProductInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+              <Button 
+                onClick={handleWishlistToggle}
+                variant="outline" 
+                className="w-full text-lg py-3"
+                size="lg"
+              >
+                <Heart className={`w-5 h-5 mr-2 ${inWishlist ? 'fill-current' : ''}`} />
+                {inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
               </Button>
+            </div>
+
+            {/* Product Features */}
+            <div className="grid grid-cols-3 gap-4 pt-6 border-t">
+              <div className="text-center">
+                <Truck className="w-8 h-8 mx-auto mb-2 text-primary" />
+                <div className="text-sm font-medium">Free Shipping</div>
+                <div className="text-xs text-gray-600">Orders over $100</div>
+              </div>
+              <div className="text-center">
+                <Shield className="w-8 h-8 mx-auto mb-2 text-primary" />
+                <div className="text-sm font-medium">Authentic</div>
+                <div className="text-xs text-gray-600">Guaranteed</div>
+              </div>
+              <div className="text-center">
+                <RotateCcw className="w-8 h-8 mx-auto mb-2 text-primary" />
+                <div className="text-sm font-medium">Easy Returns</div>
+                <div className="text-xs text-gray-600">30-day policy</div>
+              </div>
             </div>
           </div>
         </div>
-        
-        {/* Additional Product Information */}
-        <div className="mb-16">
-          <Tabs defaultValue="details">
-            <TabsList className="w-full justify-start border-b rounded-none">
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews</TabsTrigger>
-              <TabsTrigger value="shipping">Shipping & Returns</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="details" className="pt-6">
-              <div className="prose max-w-none">
-                <h3>Product Details</h3>
-                <ul>
-                  <li>Category: {product.category?.name}</li>
-                  <li>Material: Premium quality materials</li>
-                  <li>Style: Contemporary streetwear</li>
-                  {product.tags && product.tags.length > 0 && (
-                    <li>Tags: {product.tags.map(tag => tag.name).join(', ')}</li>
-                  )}
-                </ul>
-                
-                <h3>Care Instructions</h3>
-                <p>
-                  To keep your product looking its best, we recommend:
-                </p>
-                <ul>
-                  <li>Clean with a damp cloth</li>
-                  <li>Air dry only</li>
-                  <li>Store in a cool, dry place</li>
-                  <li>Avoid direct sunlight for extended periods</li>
-                </ul>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="reviews" className="pt-6">
-              <ProductReviews 
-                reviews={convertedReviews}
-                productId={product.id}
-              />
-            </TabsContent>
-            
-            <TabsContent value="shipping" className="pt-6">
-              <div className="prose max-w-none">
-                <h3>Shipping Information</h3>
-                <p>
-                  We offer the following shipping options:
-                </p>
-                <ul>
-                  <li>Standard Shipping (3-5 business days): $5.99</li>
-                  <li>Express Shipping (1-2 business days): $12.99</li>
-                  <li>Free shipping on orders over $100</li>
-                </ul>
-                
-                <h3>Returns & Exchanges</h3>
-                <p>
-                  Not happy with your purchase? No problem! We offer a 30-day return policy.
-                </p>
-                <ul>
-                  <li>Items must be unused with original tags attached</li>
-                  <li>Shipping costs are non-refundable</li>
-                  <li>For exchanges, please contact our customer service team</li>
-                </ul>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-        
-        {/* Style Inspiration Section */}
-        <StyleInspirationSection />
+
+        {/* Product Details Tabs */}
+        <Tabs defaultValue="description" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="description">Description</TabsTrigger>
+            <TabsTrigger value="specifications">Specifications</TabsTrigger>
+            <TabsTrigger value="reviews">Reviews</TabsTrigger>
+          </TabsList>
+          <TabsContent value="description" className="mt-6">
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-gray-700 leading-relaxed">{product.description}</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="specifications" className="mt-6">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium mb-2">Product Details</h4>
+                    <ul className="space-y-1 text-sm text-gray-600">
+                      <li>Brand: {product.brand_id || 'N/A'}</li>
+                      <li>SKU: {product.sku || 'N/A'}</li>
+                      <li>Gender: {product.gender || 'Unisex'}</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-2">Features</h4>
+                    <ul className="space-y-1 text-sm text-gray-600">
+                      <li>Premium Materials</li>
+                      <li>Comfortable Fit</li>
+                      <li>Durable Construction</li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="reviews" className="mt-6">
+            <ProductReviews 
+              reviews={product.reviews || []}
+              onAddReview={handleAddReview}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </PageLayout>
   );
