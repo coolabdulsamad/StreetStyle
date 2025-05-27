@@ -78,7 +78,7 @@ const ProductDetailPage = () => {
           <ProductInfo product={product} />
         </div>
         
-        <ProductReviews reviews={product.reviews || []} productId={product.id} />
+        <ProductReviews reviews={product.reviews || []} />
         
         {relatedProducts.length > 0 && (
           <RelatedProducts products={relatedProducts} />

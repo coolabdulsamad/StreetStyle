@@ -8,27 +8,30 @@ import { ProductReview } from '@/types/product';
 
 interface ProductReviewsProps {
   reviews: ProductReview[];
-  onAddReview: (review: Omit<ProductReview, 'id' | 'created_at' | 'updated_at'>) => void;
+  productId?: string;
+  onAddReview?: (review: Omit<ProductReview, 'id' | 'created_at' | 'updated_at'>) => void;
 }
 
-const ProductReviews: React.FC<ProductReviewsProps> = ({ reviews, onAddReview }) => {
+const ProductReviews: React.FC<ProductReviewsProps> = ({ reviews, productId, onAddReview }) => {
   const [newReview, setNewReview] = useState({ rating: 5, review_text: '' });
   const [showForm, setShowForm] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onAddReview({
-      product_id: '', // This will be set by the parent component
-      user_id: '', // This will be set by the parent component
-      userName: 'Current User',
-      rating: newReview.rating,
-      review_text: newReview.review_text,
-      verified_purchase: false,
-      helpful_votes: 0,
-      images: null,
-    });
-    setNewReview({ rating: 5, review_text: '' });
-    setShowForm(false);
+    if (onAddReview) {
+      onAddReview({
+        product_id: productId || '',
+        user_id: '',
+        userName: 'Current User',
+        rating: newReview.rating,
+        review_text: newReview.review_text,
+        verified_purchase: false,
+        helpful_votes: 0,
+        images: null,
+      });
+      setNewReview({ rating: 5, review_text: '' });
+      setShowForm(false);
+    }
   };
 
   const renderStars = (rating: number, interactive = false, onRatingChange?: (rating: number) => void) => {
@@ -50,11 +53,13 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ reviews, onAddReview })
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-xl font-bold">Customer Reviews</h3>
-        <Button onClick={() => setShowForm(!showForm)}>Write a Review</Button>
+        <h3 className="text-xl font-bold">Customer Reviews ({reviews.length})</h3>
+        {onAddReview && (
+          <Button onClick={() => setShowForm(!showForm)}>Write a Review</Button>
+        )}
       </div>
 
-      {showForm && (
+      {showForm && onAddReview && (
         <Card>
           <CardHeader>
             <CardTitle>Write a Review</CardTitle>
@@ -88,29 +93,39 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ reviews, onAddReview })
       )}
 
       <div className="space-y-4">
-        {reviews.map((review) => (
-          <Card key={review.id}>
+        {reviews.length === 0 ? (
+          <Card>
             <CardContent className="pt-6">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <div className="font-medium">{review.userName || 'Anonymous'}</div>
-                  <div className="text-sm text-gray-500">
-                    {new Date(review.created_at).toLocaleDateString()}
-                  </div>
-                </div>
-                {renderStars(review.rating)}
-              </div>
-              <p className="text-gray-700">{review.review_text}</p>
-              {review.verified_purchase && (
-                <div className="mt-2">
-                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                    Verified Purchase
-                  </span>
-                </div>
-              )}
+              <p className="text-center text-gray-500">No reviews yet. Be the first to review this product!</p>
             </CardContent>
           </Card>
-        ))}
+        ) : (
+          reviews.map((review) => (
+            <Card key={review.id}>
+              <CardContent className="pt-6">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <div className="font-medium">{review.userName || 'Anonymous'}</div>
+                    <div className="text-sm text-gray-500">
+                      {new Date(review.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  {renderStars(review.rating)}
+                </div>
+                {review.review_text && (
+                  <p className="text-gray-700 mb-2">{review.review_text}</p>
+                )}
+                {review.verified_purchase && (
+                  <div className="mt-2">
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                      Verified Purchase
+                    </span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );
