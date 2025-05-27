@@ -15,6 +15,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { toast } from 'sonner';
 import { Shield } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -97,7 +99,7 @@ const LoginPage = () => {
   const handleRegister = async (values: RegisterFormValues) => {
     setIsLoading(true);
     try {
-      await registerUser(values.email, values.password, values.name, values.isAdmin);
+      await registerUser(values.email, values.password, values.name);
       toast.success("Registration successful! You can now login.");
       setActiveTab("login");
     } catch (error) {
@@ -163,6 +165,20 @@ const LoginPage = () => {
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? "Logging in..." : (isAdminLogin ? "Admin Login" : "Login")}
                     </Button>
+                    
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <Separator className="w-full" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">
+                          Or continue with
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <GoogleSignInButton />
+                    
                     {isAdminLogin && (
                       <p className="text-sm text-muted-foreground text-center">
                         Use your admin credentials to access the dashboard
@@ -250,6 +266,19 @@ const LoginPage = () => {
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? "Creating account..." : "Create Account"}
                     </Button>
+                    
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <Separator className="w-full" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">
+                          Or continue with
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <GoogleSignInButton />
                   </form>
                 </Form>
               </TabsContent>

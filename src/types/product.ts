@@ -1,4 +1,6 @@
 
+export type Gender = 'men' | 'women' | 'unisex' | 'kids';
+
 export interface Product {
   id: string;
   name: string;
@@ -18,7 +20,7 @@ export interface Product {
   brand_id: string | null;
   brand?: string;
   sku: string | null;
-  gender: string | null;
+  gender: Gender | null;
   release_date: string | null;
   is_limited_edition: boolean | null;
   is_limited?: boolean;

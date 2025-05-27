@@ -25,8 +25,9 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   logout: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, userData?: any) => Promise<void>;
+  register: (email: string, password: string, name?: string) => Promise<void>;
   updateProfile: (profile: UserProfile) => void;
+  signInWithGoogle: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,8 +48,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAdmin, setIsAdmin] = useState(false);
 
   // Check if user is admin
-  const checkAdminStatus = async (userId: string) => {
+  const checkAdminStatus = async (userId: string, email?: string) => {
     try {
+      // Check if this is the default admin
+      if (email === 'chisimindumichael@gmail.com') {
+        setIsAdmin(true);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -94,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           // Check admin status when user logs in
           setTimeout(() => {
-            checkAdminStatus(session.user.id);
+            checkAdminStatus(session.user.id, session.user.email);
             fetchProfile(session.user.id);
           }, 0);
         } else {
@@ -112,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        checkAdminStatus(session.user.id);
+        checkAdminStatus(session.user.id, session.user.email);
         fetchProfile(session.user.id);
       }
       
@@ -159,6 +166,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error signing in with Google:', error);
+      toast.error(error.message || 'An error occurred during Google sign in');
+      throw error;
+    }
+  };
+
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -177,7 +201,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Alias methods for backward compatibility
   const logout = signOut;
   const login = signIn;
-  const register = signUp;
+  const register = async (email: string, password: string, name?: string) => {
+    return signUp(email, password, { full_name: name });
+  };
 
   const updateProfile = (updatedProfile: UserProfile) => {
     setProfile(updatedProfile);
@@ -196,6 +222,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     register,
     updateProfile,
+    signInWithGoogle,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
