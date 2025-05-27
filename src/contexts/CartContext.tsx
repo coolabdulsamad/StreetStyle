@@ -19,6 +19,7 @@ export type CartItem = {
 export type CartContextType = {
   cart: CartItem[];
   items: CartItem[];
+  cartItems: CartItem[]; // Added this missing property
   wishlist: Product[];
   addToCart: (product: Product, variant?: any, quantity?: number) => void;
   removeFromCart: (itemId: string) => void;
@@ -137,6 +138,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const total = cartTotal;
   const items = cart;
+  const cartItems = cart; // Alias for compatibility
   const cartCount = cart.reduce((count, item) => count + item.quantity, 0);
   const totalItems = cartCount;
   
@@ -191,6 +193,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <CartContext.Provider value={{ 
       cart,
       items,
+      cartItems,
       wishlist,
       addToCart, 
       removeFromCart, 

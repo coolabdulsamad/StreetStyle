@@ -1,3 +1,4 @@
+
 import { Product, ProductCategory } from '@/types/product';
 
 // Categories definition moved here to avoid circular dependency
@@ -9,7 +10,7 @@ export const CATEGORIES: ProductCategory[] = [
   { id: '5', name: 'Accessories', slug: 'accessories', description: 'Fashion accessories and gear' },
 ];
 
-// Extended product catalog with 60+ products
+// Extended product catalog with working image URLs
 export const EXTENDED_PRODUCTS: Product[] = [
   // Sneakers
   {
@@ -19,8 +20,8 @@ export const EXTENDED_PRODUCTS: Product[] = [
     description: 'The Air Jordan 1 Retro High OG brings back the classic Chicago colorway with premium leather construction and iconic design elements.',
     price: 179.99,
     images: [
-      'https://images.stockx.com/images/Air-Jordan-1-Retro-High-OG-Chicago-Lost-and-Found-DZ5485-612.png?auto=format,compress&w=576&q=90&dpr=2&updated_at=1667363453',
-      'https://images.stockx.com/images/Air-Jordan-1-Retro-High-OG-Chicago-Lost-and-Found-DZ5485-612-1.png?auto=format,compress&w=576&q=90&dpr=2&updated_at=1667363453'
+      'https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1549298916-b41d501d3772?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     ],
     category: CATEGORIES[0],
     tags: [{ id: '1', name: 'Jordan' }, { id: '2', name: 'Basketball' }],
@@ -41,6 +42,9 @@ export const EXTENDED_PRODUCTS: Product[] = [
     is_sale: false,
     stock_quantity: 15,
     average_rating: 4.8,
+    release_date: null,
+    meta_title: null,
+    meta_description: null,
     reviews: []
   },
   {
@@ -50,7 +54,7 @@ export const EXTENDED_PRODUCTS: Product[] = [
     description: 'Classic Nike Dunk Low in the timeless White/Black colorway. Perfect for everyday wear with premium leather construction.',
     price: 109.99,
     images: [
-      'https://images.stockx.com/images/Nike-Dunk-Low-Retro-White-Black-2021.png?auto=format,compress&w=576&q=90&dpr=2&updated_at=1638448098'
+      'https://images.unsplash.com/photo-1608231387042-66d1773070a5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     ],
     category: CATEGORIES[0],
     tags: [{ id: '3', name: 'Nike' }, { id: '4', name: 'Casual' }],
@@ -70,6 +74,9 @@ export const EXTENDED_PRODUCTS: Product[] = [
     is_sale: false,
     stock_quantity: 15,
     average_rating: 4.5,
+    release_date: null,
+    meta_title: null,
+    meta_description: null,
     reviews: []
   },
   {
@@ -79,7 +86,7 @@ export const EXTENDED_PRODUCTS: Product[] = [
     description: 'Adidas Yeezy Boost 350 V2 in the iconic Zebra colorway. Features Primeknit upper and Boost midsole technology.',
     price: 299.99,
     images: [
-      'https://images.stockx.com/images/adidas-Yeezy-Boost-350-V2-Zebra-2022.png?auto=format,compress&w=576&q=90&dpr=2&updated_at=1645564792'
+      'https://images.unsplash.com/photo-1556048219-bb6978360b84?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     ],
     category: CATEGORIES[0],
     tags: [{ id: '5', name: 'Yeezy' }, { id: '6', name: 'Adidas' }],
@@ -99,6 +106,9 @@ export const EXTENDED_PRODUCTS: Product[] = [
     is_sale: false,
     stock_quantity: 3,
     average_rating: 4.9,
+    release_date: null,
+    meta_title: null,
+    meta_description: null,
     reviews: []
   },
   {
@@ -108,7 +118,7 @@ export const EXTENDED_PRODUCTS: Product[] = [
     description: 'Collaboration between Off-White and Nike featuring deconstructed design elements and signature Off-White aesthetic.',
     price: 1299.99,
     images: [
-      'https://images.stockx.com/images/Nike-Air-Force-1-Low-Off-White.png?auto=format,compress&w=576&q=90&dpr=2&updated_at=1606321777'
+      'https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     ],
     category: CATEGORIES[0],
     tags: [{ id: '7', name: 'Off-White' }, { id: '8', name: 'Collaboration' }],
@@ -128,6 +138,9 @@ export const EXTENDED_PRODUCTS: Product[] = [
     is_sale: false,
     stock_quantity: 1,
     average_rating: 4.7,
+    release_date: null,
+    meta_title: null,
+    meta_description: null,
     reviews: []
   },
   {
@@ -137,7 +150,7 @@ export const EXTENDED_PRODUCTS: Product[] = [
     description: 'Retro basketball silhouette with premium leather upper and classic New Balance styling.',
     price: 119.99,
     images: [
-      'https://images.stockx.com/images/New-Balance-550-White-Green.png?auto=format,compress&w=576&q=90&dpr=2&updated_at=1635437559'
+      'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     ],
     category: CATEGORIES[0],
     tags: [{ id: '9', name: 'New Balance' }, { id: '10', name: 'Retro' }],
@@ -157,6 +170,9 @@ export const EXTENDED_PRODUCTS: Product[] = [
     is_sale: false,
     stock_quantity: 8,
     average_rating: 4.4,
+    release_date: null,
+    meta_title: null,
+    meta_description: null,
     reviews: []
   },
   // Hoodies & Streetwear
@@ -167,7 +183,7 @@ export const EXTENDED_PRODUCTS: Product[] = [
     description: 'Premium cotton hoodie from Fear of God Essentials featuring relaxed fit and minimalist branding.',
     price: 149.99,
     images: [
-      'https://images.stockx.com/images/Fear-of-God-Essentials-Hoodie-Dark-Oatmeal.png?auto=format,compress&w=576&q=90&dpr=2&updated_at=1672874855'
+      'https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     ],
     category: CATEGORIES[1],
     tags: [{ id: '11', name: 'Fear of God' }, { id: '12', name: 'Essentials' }],
@@ -187,6 +203,9 @@ export const EXTENDED_PRODUCTS: Product[] = [
     is_sale: false,
     stock_quantity: 12,
     average_rating: 4.6,
+    release_date: null,
+    meta_title: null,
+    meta_description: null,
     reviews: []
   },
   {
@@ -196,7 +215,7 @@ export const EXTENDED_PRODUCTS: Product[] = [
     description: 'Iconic Supreme Box Logo hoodie in black. Made from heavyweight cotton fleece with embroidered logo.',
     price: 899.99,
     images: [
-      'https://images.stockx.com/images/Supreme-Box-Logo-Hoodie-Black-FW20.png?auto=format,compress&w=576&q=90&dpr=2&updated_at=1606321777'
+      'https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     ],
     category: CATEGORIES[1],
     tags: [{ id: '13', name: 'Supreme' }, { id: '14', name: 'Box Logo' }],
@@ -216,6 +235,9 @@ export const EXTENDED_PRODUCTS: Product[] = [
     is_sale: false,
     stock_quantity: 2,
     average_rating: 4.8,
+    release_date: null,
+    meta_title: null,
+    meta_description: null,
     reviews: []
   },
   {
@@ -225,7 +247,7 @@ export const EXTENDED_PRODUCTS: Product[] = [
     description: 'Classic Stussy hoodie featuring the iconic 8-ball graphic on front and back.',
     price: 89.99,
     images: [
-      'https://images.stockx.com/images/Stussy-8-Ball-Hoodie-Black.png?auto=format,compress&w=576&q=90&dpr=2&updated_at=1635437559'
+      'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     ],
     category: CATEGORIES[1],
     tags: [{ id: '15', name: 'Stussy' }, { id: '16', name: '8-Ball' }],
@@ -245,6 +267,9 @@ export const EXTENDED_PRODUCTS: Product[] = [
     is_sale: false,
     stock_quantity: 15,
     average_rating: 4.3,
+    release_date: null,
+    meta_title: null,
+    meta_description: null,
     reviews: []
   },
   // T-Shirts
@@ -255,7 +280,7 @@ export const EXTENDED_PRODUCTS: Product[] = [
     description: 'Premium cotton tee from Kith Monday Program collection with embroidered logo.',
     price: 65.99,
     images: [
-      'https://images.stockx.com/images/Kith-Monday-Program-Tee-White.png?auto=format,compress&w=576&q=90&dpr=2&updated_at=1672874855'
+      'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     ],
     category: CATEGORIES[2],
     tags: [{ id: '17', name: 'Kith' }, { id: '18', name: 'Monday Program' }],
@@ -275,6 +300,9 @@ export const EXTENDED_PRODUCTS: Product[] = [
     is_sale: false,
     stock_quantity: 20,
     average_rating: 4.5,
+    release_date: null,
+    meta_title: null,
+    meta_description: null,
     reviews: []
   },
   {
@@ -284,7 +312,7 @@ export const EXTENDED_PRODUCTS: Product[] = [
     description: 'Off-White graphic tee featuring Caravaggio artwork with signature arrow motifs.',
     price: 199.99,
     images: [
-      'https://images.stockx.com/images/Off-White-Caravaggio-Tee-Black.png?auto=format,compress&w=576&q=90&dpr=2&updated_at=1635437559'
+      'https://images.unsplash.com/photo-1576566588028-4147f3842f27?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     ],
     category: CATEGORIES[2],
     tags: [{ id: '19', name: 'Off-White' }, { id: '20', name: 'Caravaggio' }],
@@ -304,6 +332,9 @@ export const EXTENDED_PRODUCTS: Product[] = [
     is_sale: false,
     stock_quantity: 6,
     average_rating: 4.7,
+    release_date: null,
+    meta_title: null,
+    meta_description: null,
     reviews: []
   },
   {
@@ -313,7 +344,7 @@ export const EXTENDED_PRODUCTS: Product[] = [
     description: 'Collaboration between Travis Scott and Nike featuring reverse Swoosh and earthy colorway.',
     price: 799.99,
     images: [
-      'https://images.stockx.com/images/Nike-Air-Max-1-Travis-Scott-Cactus-Jack.png?auto=format,compress&w=576&q=90&dpr=2&updated_at=1672874855'
+      'https://images.unsplash.com/photo-1605348532760-6753d2c43329?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     ],
     category: CATEGORIES[0],
     tags: [{ id: '21', name: 'Travis Scott' }, { id: '22', name: 'Cactus Jack' }],
@@ -333,6 +364,9 @@ export const EXTENDED_PRODUCTS: Product[] = [
     is_sale: false,
     stock_quantity: 2,
     average_rating: 4.9,
+    release_date: null,
+    meta_title: null,
+    meta_description: null,
     reviews: []
   },
   {
@@ -342,7 +376,7 @@ export const EXTENDED_PRODUCTS: Product[] = [
     description: 'Technical hoodie from Stone Island Shadow Project with advanced fabric technology.',
     price: 449.99,
     images: [
-      'https://images.stockx.com/images/Stone-Island-Shadow-Project-Hoodie-Black.png?auto=format,compress&w=576&q=90&dpr=2&updated_at=1635437559'
+      'https://images.unsplash.com/photo-1503341504253-dff4815485f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     ],
     category: CATEGORIES[1],
     tags: [{ id: '23', name: 'Stone Island' }, { id: '24', name: 'Shadow Project' }],
@@ -362,6 +396,9 @@ export const EXTENDED_PRODUCTS: Product[] = [
     is_sale: false,
     stock_quantity: 4,
     average_rating: 4.6,
+    release_date: null,
+    meta_title: null,
+    meta_description: null,
     reviews: []
   }
 ];

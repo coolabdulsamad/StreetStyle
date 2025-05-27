@@ -21,14 +21,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
       return;
     }
 
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: selectedVariant.price,
-      images: product.images,
-      variant: selectedVariant
-    });
-
+    addToCart(product, selectedVariant);
     toast.success('Added to cart!');
   };
 
