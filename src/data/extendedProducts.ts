@@ -1,6 +1,13 @@
+import { Product, ProductCategory } from '@/types/product';
 
-import { Product } from '@/types/product';
-import { CATEGORIES } from './products';
+// Categories definition moved here to avoid circular dependency
+export const CATEGORIES: ProductCategory[] = [
+  { id: '1', name: 'Sneakers', slug: 'sneakers', description: 'Premium sneakers and athletic footwear' },
+  { id: '2', name: 'Hoodies', slug: 'hoodies', description: 'Comfortable and stylish hoodies' },
+  { id: '3', name: 'T-Shirts', slug: 't-shirts', description: 'Trendy t-shirts and tops' },
+  { id: '4', name: 'Jackets', slug: 'jackets', description: 'Stylish jackets and outerwear' },
+  { id: '5', name: 'Accessories', slug: 'accessories', description: 'Fashion accessories and gear' },
+];
 
 // Extended product catalog with 60+ products
 export const EXTENDED_PRODUCTS: Product[] = [
@@ -26,9 +33,13 @@ export const EXTENDED_PRODUCTS: Product[] = [
     rating: 4.8,
     review_count: 45,
     brand_id: 'nike',
+    brand: 'Nike',
     sku: 'AJ1-CHI',
     gender: 'unisex',
     is_limited_edition: false,
+    is_limited: false,
+    is_sale: false,
+    stock_quantity: 15,
     average_rating: 4.8,
     reviews: []
   },
@@ -51,9 +62,13 @@ export const EXTENDED_PRODUCTS: Product[] = [
     rating: 4.5,
     review_count: 30,
     brand_id: 'nike',
+    brand: 'Nike',
     sku: 'DUNK-WB',
     gender: 'unisex',
     is_limited_edition: false,
+    is_limited: false,
+    is_sale: false,
+    stock_quantity: 15,
     average_rating: 4.5,
     reviews: []
   },
@@ -76,9 +91,13 @@ export const EXTENDED_PRODUCTS: Product[] = [
     rating: 4.9,
     review_count: 89,
     brand_id: 'adidas',
+    brand: 'Adidas',
     sku: 'YZY-ZEB',
     gender: 'unisex',
     is_limited_edition: true,
+    is_limited: true,
+    is_sale: false,
+    stock_quantity: 3,
     average_rating: 4.9,
     reviews: []
   },
@@ -101,9 +120,13 @@ export const EXTENDED_PRODUCTS: Product[] = [
     rating: 4.7,
     review_count: 23,
     brand_id: 'nike',
+    brand: 'Nike',
     sku: 'OW-AF1',
     gender: 'unisex',
     is_limited_edition: true,
+    is_limited: true,
+    is_sale: false,
+    stock_quantity: 1,
     average_rating: 4.7,
     reviews: []
   },
@@ -126,9 +149,13 @@ export const EXTENDED_PRODUCTS: Product[] = [
     rating: 4.4,
     review_count: 67,
     brand_id: 'new-balance',
+    brand: 'New Balance',
     sku: 'NB550-WG',
     gender: 'unisex',
     is_limited_edition: false,
+    is_limited: false,
+    is_sale: false,
+    stock_quantity: 8,
     average_rating: 4.4,
     reviews: []
   },
@@ -152,9 +179,13 @@ export const EXTENDED_PRODUCTS: Product[] = [
     rating: 4.6,
     review_count: 34,
     brand_id: 'fear-of-god',
+    brand: 'Fear of God',
     sku: 'FOG-HOOD-OAT',
     gender: 'unisex',
     is_limited_edition: false,
+    is_limited: false,
+    is_sale: false,
+    stock_quantity: 12,
     average_rating: 4.6,
     reviews: []
   },
@@ -177,9 +208,13 @@ export const EXTENDED_PRODUCTS: Product[] = [
     rating: 4.8,
     review_count: 156,
     brand_id: 'supreme',
+    brand: 'Supreme',
     sku: 'SUP-BOX-BLK',
     gender: 'unisex',
     is_limited_edition: true,
+    is_limited: true,
+    is_sale: false,
+    stock_quantity: 2,
     average_rating: 4.8,
     reviews: []
   },
@@ -202,9 +237,13 @@ export const EXTENDED_PRODUCTS: Product[] = [
     rating: 4.3,
     review_count: 78,
     brand_id: 'stussy',
+    brand: 'Stussy',
     sku: 'STY-8B-BLK',
     gender: 'unisex',
     is_limited_edition: false,
+    is_limited: false,
+    is_sale: false,
+    stock_quantity: 15,
     average_rating: 4.3,
     reviews: []
   },
@@ -228,9 +267,13 @@ export const EXTENDED_PRODUCTS: Product[] = [
     rating: 4.5,
     review_count: 43,
     brand_id: 'kith',
+    brand: 'Kith',
     sku: 'KITH-MP-WHT',
     gender: 'unisex',
     is_limited_edition: false,
+    is_limited: false,
+    is_sale: false,
+    stock_quantity: 20,
     average_rating: 4.5,
     reviews: []
   },
@@ -253,13 +296,16 @@ export const EXTENDED_PRODUCTS: Product[] = [
     rating: 4.7,
     review_count: 89,
     brand_id: 'off-white',
+    brand: 'Off-White',
     sku: 'OW-CAR-BLK',
     gender: 'unisex',
     is_limited_edition: true,
+    is_limited: true,
+    is_sale: false,
+    stock_quantity: 6,
     average_rating: 4.7,
     reviews: []
   },
-  // Continue with more products...
   {
     id: '11',
     name: 'Travis Scott x Nike Air Max 1',
@@ -279,9 +325,13 @@ export const EXTENDED_PRODUCTS: Product[] = [
     rating: 4.9,
     review_count: 234,
     brand_id: 'nike',
+    brand: 'Nike',
     sku: 'TS-AM1-BT',
     gender: 'unisex',
     is_limited_edition: true,
+    is_limited: true,
+    is_sale: false,
+    stock_quantity: 2,
     average_rating: 4.9,
     reviews: []
   },
@@ -304,14 +354,14 @@ export const EXTENDED_PRODUCTS: Product[] = [
     rating: 4.6,
     review_count: 67,
     brand_id: 'stone-island',
+    brand: 'Stone Island',
     sku: 'SI-SP-BLK',
     gender: 'unisex',
     is_limited_edition: false,
+    is_limited: false,
+    is_sale: false,
+    stock_quantity: 4,
     average_rating: 4.6,
     reviews: []
   }
-  // Add 48+ more products following the same pattern...
 ];
-
-// You can continue adding more products to reach 60+ total
-// For brevity, I'm showing a representative sample
