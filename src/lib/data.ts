@@ -1,6 +1,6 @@
 
 import { Product } from '@/types/product';
-import { PRODUCTS, getProductBySlug } from '@/data/products';
+import { PRODUCTS, getProductBySlug, searchProducts as searchProductsData } from '@/data/products';
 
 export const getProduct = async (slug?: string): Promise<Product | null> => {
   if (!slug) return null;
@@ -33,13 +33,7 @@ export const searchProducts = async (query: string): Promise<Product[]> => {
   // Simulate API call with a small delay
   return new Promise((resolve) => {
     setTimeout(() => {
-      const lowercaseQuery = query.toLowerCase();
-      const products = PRODUCTS.filter(product => 
-        product.name.toLowerCase().includes(lowercaseQuery) ||
-        product.description.toLowerCase().includes(lowercaseQuery) ||
-        product.category.name.toLowerCase().includes(lowercaseQuery) ||
-        product.tags.some(tag => tag.name.toLowerCase().includes(lowercaseQuery))
-      );
+      const products = searchProductsData(query);
       resolve(products);
     }, 300);
   });

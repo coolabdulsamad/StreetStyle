@@ -31,10 +31,10 @@ const WishlistPage = () => {
             id: product.category?.id || '',
             name: product.category?.name || '',
             slug: product.category?.slug || '',
-            description: product.category?.description || null,
+            description: product.category?.description || '',
             parent_id: product.category?.parent_id || null,
             image_url: product.category?.image_url || null,
-            is_active: product.category?.is_active || true,
+            is_active: product.category?.is_active ?? true,
             display_order: product.category?.display_order || 0,
             created_at: product.category?.created_at || new Date().toISOString()
           },
@@ -45,11 +45,16 @@ const WishlistPage = () => {
           rating: product.rating,
           reviews: (product.reviews || []).map(review => ({
             id: review.id,
-            userId: review.user_id,
+            product_id: product.id,
+            user_id: review.user_id,
             userName: review.userName || 'Anonymous',
             rating: review.rating,
-            comment: review.review_text || '',
-            date: review.created_at
+            review_text: review.review_text || '',
+            verified_purchase: true,
+            helpful_votes: 0,
+            images: [],
+            created_at: review.created_at,
+            updated_at: review.created_at
           })),
           brand_id: product.brand_id || null,
           sku: product.sku || null,
