@@ -1,304 +1,243 @@
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Package, Truck, CheckCircle, XCircle, Clock, RotateCcw } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { getUserOrders } from '@/lib/services/orderService';
+import { Order } from '@/lib/types';
 import { formatPrice } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom';
 
-// Define the Order type
-type OrderStatus = 'processing' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+const OrderHistory = () => {
+  const { user } = useAuth();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-interface OrderItem {
-  id: string;
-  name: string;
-  image: string;
-  variant: string;
-  price: number;
-  quantity: number;
-}
-
-interface Order {
-  id: string;
-  date: string;
-  status: OrderStatus;
-  total: number;
-  items: OrderItem[];
-  trackingNumber?: string;
-  deliveryDate?: string;
-}
-
-// Mock orders data
-const mockOrders: Order[] = [
-  {
-    id: 'ORD-1234',
-    date: '2023-05-15T10:30:00Z',
-    status: 'delivered',
-    total: 249.98,
-    trackingNumber: 'TRK9876543210',
-    deliveryDate: '2023-05-20T14:20:00Z',
-    items: [
-      {
-        id: 'item-1',
-        name: 'Nike Air Max 270',
-        image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80',
-        variant: 'Black/White - US 10',
-        price: 149.99,
-        quantity: 1
-      },
-      {
-        id: 'item-2',
-        name: 'Supreme Box Logo T-Shirt',
-        image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1964&q=80',
-        variant: 'Red - Large',
-        price: 99.99,
-        quantity: 1
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!user) return;
+      
+      setIsLoading(true);
+      try {
+        const userOrders = await getUserOrders();
+        setOrders(userOrders);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+      } finally {
+        setIsLoading(false);
       }
-    ]
-  },
-  {
-    id: 'ORD-5678',
-    date: '2023-06-02T09:15:00Z',
-    status: 'shipped',
-    total: 189.95,
-    trackingNumber: 'TRK1234567890',
-    items: [
-      {
-        id: 'item-3',
-        name: 'Adidas Ultraboost',
-        image: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1474&q=80',
-        variant: 'Cloud White - US 9',
-        price: 189.95,
-        quantity: 1
-      }
-    ]
-  },
-  {
-    id: 'ORD-9012',
-    date: '2023-06-10T16:45:00Z',
-    status: 'processing',
-    total: 349.97,
-    items: [
-      {
-        id: 'item-4',
-        name: 'Jordan 1 Retro High',
-        image: 'https://images.unsplash.com/photo-1556048219-bb6978360b84?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1471&q=80',
-        variant: 'Chicago - US 11',
-        price: 179.99,
-        quantity: 1
-      },
-      {
-        id: 'item-5',
-        name: 'Off-White Industrial Belt',
-        image: 'https://images.unsplash.com/photo-1588099768523-f4e6a5300f6e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=687&q=80',
-        variant: 'Yellow',
-        price: 169.98,
-        quantity: 1
-      }
-    ]
-  }
-];
+    };
 
-const getStatusColor = (status: OrderStatus) => {
-  switch (status) {
-    case 'processing':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'confirmed':
-      return 'bg-blue-100 text-blue-800';
-    case 'shipped':
-      return 'bg-purple-100 text-purple-800';
-    case 'delivered':
-      return 'bg-green-100 text-green-800';
-    case 'cancelled':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
+    fetchOrders();
+  }, [user]);
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-};
-
-interface OrderHistoryProps {
-  userId?: string;
-}
-
-const OrderHistory: React.FC<OrderHistoryProps> = ({ userId }) => {
-  const navigate = useNavigate();
-  const [orders] = React.useState<Order[]>(mockOrders);
-
-  const viewOrderDetails = (orderId: string) => {
-    // In a real app, this would navigate to an order detail page
-    console.log(`Viewing order details for order ${orderId}`);
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Clock className="w-4 h-4" />;
+      case 'processing':
+        return <Package className="w-4 h-4" />;
+      case 'shipped':
+        return <Truck className="w-4 h-4" />;
+      case 'delivered':
+        return <CheckCircle className="w-4 h-4" />;
+      case 'cancelled':
+        return <XCircle className="w-4 h-4" />;
+      case 'returned':
+        return <RotateCcw className="w-4 h-4" />;
+      default:
+        return <Package className="w-4 h-4" />;
+    }
   };
 
-  const handleBuyAgain = (items: OrderItem[]) => {
-    // In a real app, this would add all items to cart and navigate to cart page
-    console.log('Adding all items to cart:', items);
-    navigate('/cart');
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'secondary';
+      case 'processing':
+        return 'default';
+      case 'shipped':
+        return 'default';
+      case 'delivered':
+        return 'default';
+      case 'cancelled':
+        return 'destructive';
+      case 'returned':
+        return 'secondary';
+      default:
+        return 'secondary';
+    }
   };
 
-  const handleTrackOrder = (trackingNumber: string) => {
-    // In a real app, this would navigate to a tracking page or open the courier's tracking page
-    console.log(`Tracking order with tracking number ${trackingNumber}`);
+  const handleReorder = (order: Order) => {
+    // Implementation for reordering
+    console.log('Reorder:', order);
   };
 
-  if (!orders || orders.length === 0) {
+  const handleTrackOrder = (order: Order) => {
+    // Implementation for order tracking
+    console.log('Track order:', order);
+  };
+
+  if (isLoading) {
     return (
-      <div className="text-center py-10">
-        <h3 className="text-lg font-medium mb-2">No Orders Yet</h3>
-        <p className="text-muted-foreground mb-6">
-          You haven't placed any orders yet.
-        </p>
-        <Button onClick={() => navigate('/products')}>
-          Start Shopping
-        </Button>
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardContent className="p-6">
+              <div className="space-y-3">
+                <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
+    );
+  }
+
+  if (orders.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-medium mb-2">No orders yet</h3>
+          <p className="text-muted-foreground mb-4">
+            You haven't placed any orders yet. Start shopping to see your order history here.
+          </p>
+          <Button asChild>
+            <a href="/products">Start Shopping</a>
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="all">
-        <TabsList>
-          <TabsTrigger value="all">All Orders</TabsTrigger>
-          <TabsTrigger value="processing">Processing</TabsTrigger>
-          <TabsTrigger value="shipped">Shipped</TabsTrigger>
-          <TabsTrigger value="delivered">Delivered</TabsTrigger>
-        </TabsList>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Order History</h2>
+        <Badge variant="secondary">{orders.length} orders</Badge>
+      </div>
 
-        <TabsContent value="all" className="space-y-6">
-          {orders.map((order) => (
-            <Card key={order.id} className="overflow-hidden">
-              <CardHeader className="bg-muted/50 py-4">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <h3 className="font-medium">Order #{order.id}</h3>
-                      <Badge className={getStatusColor(order.status)}>
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Placed on {formatDate(order.date)}
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => viewOrderDetails(order.id)}
-                    >
-                      View Details
-                    </Button>
-                    {order.trackingNumber && (order.status === 'shipped' || order.status === 'delivered') && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleTrackOrder(order.trackingNumber!)}
-                      >
-                        Track Order
-                      </Button>
-                    )}
-                    {order.status === 'delivered' && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleBuyAgain(order.items)}
-                      >
-                        Buy Again
-                      </Button>
-                    )}
-                  </div>
+      <div className="space-y-4">
+        {orders.map((order) => (
+          <Card key={order.id}>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">Order #{order.order_number}</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Placed on {new Date(order.created_at).toLocaleDateString()}
+                  </p>
                 </div>
-              </CardHeader>
-              <CardContent className="py-4">
-                <div className="space-y-4">
-                  {order.items.map((item, index) => (
-                    <div key={item.id}>
-                      {index > 0 && <Separator className="my-4" />}
-                      <div className="flex items-center space-x-4">
-                        <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="h-full w-full object-cover object-center"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = "/placeholder.svg";
-                            }}
-                          />
-                        </div>
-                        <div className="flex-grow">
-                          <h4 className="font-medium">{item.name}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {item.variant}
-                          </p>
-                          <div className="mt-1 flex justify-between">
-                            <p className="text-sm">
-                              Qty: {item.quantity}
-                            </p>
-                            <p className="text-sm font-medium">
-                              {formatPrice(item.price)}
-                            </p>
-                          </div>
-                        </div>
+                <Badge variant={getStatusColor(order.order_status)} className="flex items-center gap-1">
+                  {getStatusIcon(order.order_status)}
+                  <span className="capitalize">{order.order_status}</span>
+                </Badge>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="space-y-4">
+              {/* Order Items */}
+              <div className="space-y-2">
+                {order.items?.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between py-2">
+                    <div className="flex items-center gap-3">
+                      {item.product?.images?.[0] && (
+                        <img 
+                          src={item.product.images[0]} 
+                          alt={item.name}
+                          className="w-12 h-12 object-cover rounded"
+                        />
+                      )}
+                      <div>
+                        <p className="font-medium">{item.name}</p>
+                        {item.variant_name && (
+                          <p className="text-sm text-muted-foreground">{item.variant_name}</p>
+                        )}
+                        <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-                <div className="mt-6 flex items-center justify-between">
-                  <div>
-                    {order.deliveryDate && order.status === 'delivered' && (
-                      <p className="text-sm text-muted-foreground">
-                        Delivered on {formatDate(order.deliveryDate)}
-                      </p>
-                    )}
+                    <p className="font-medium">{formatPrice(item.price * item.quantity)}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm text-muted-foreground">
-                      Total
-                    </p>
-                    <p className="text-lg font-medium">
-                      {formatPrice(order.total)}
-                    </p>
-                  </div>
+                ))}
+              </div>
+
+              <Separator />
+
+              {/* Order Summary */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Subtotal:</span>
+                  <span>{formatPrice(order.subtotal)}</span>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
+                <div className="flex justify-between text-sm">
+                  <span>Shipping:</span>
+                  <span>{formatPrice(order.shipping_cost)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Tax:</span>
+                  <span>{formatPrice(order.tax)}</span>
+                </div>
+                {order.discount > 0 && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>Discount:</span>
+                    <span>-{formatPrice(order.discount)}</span>
+                  </div>
+                )}
+                <Separator />
+                <div className="flex justify-between font-medium">
+                  <span>Total:</span>
+                  <span>{formatPrice(order.total)}</span>
+                </div>
+              </div>
 
-        <TabsContent value="processing" className="space-y-6">
-          {orders.filter(order => order.status === 'processing').map((order) => (
-            <Card key={order.id} className="overflow-hidden">
-              {/* Same card content as above */}
-            </Card>
-          ))}
-        </TabsContent>
+              {/* Shipping Info */}
+              {order.shipping_address && (
+                <div className="text-sm">
+                  <p className="font-medium mb-1">Shipping Address:</p>
+                  <p className="text-muted-foreground">
+                    {order.shipping_address.first_name} {order.shipping_address.last_name}<br />
+                    {order.shipping_address.address_line1}<br />
+                    {order.shipping_address.city}, {order.shipping_address.state} {order.shipping_address.postal_code}
+                  </p>
+                </div>
+              )}
 
-        <TabsContent value="shipped" className="space-y-6">
-          {orders.filter(order => order.status === 'shipped').map((order) => (
-            <Card key={order.id} className="overflow-hidden">
-              {/* Same card content as above */}
-            </Card>
-          ))}
-        </TabsContent>
+              {/* Tracking Info */}
+              {order.tracking_number && (
+                <div className="text-sm">
+                  <p className="font-medium mb-1">Tracking Number:</p>
+                  <p className="text-muted-foreground font-mono">{order.tracking_number}</p>
+                </div>
+              )}
 
-        <TabsContent value="delivered" className="space-y-6">
-          {orders.filter(order => order.status === 'delivered').map((order) => (
-            <Card key={order.id} className="overflow-hidden">
-              {/* Same card content as above */}
-            </Card>
-          ))}
-        </TabsContent>
-      </Tabs>
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-2">
+                {order.order_status === 'shipped' && (
+                  <Button variant="outline" size="sm" onClick={() => handleTrackOrder(order)}>
+                    <Truck className="w-4 h-4 mr-2" />
+                    Track Order
+                  </Button>
+                )}
+                {order.order_status === 'delivered' && (
+                  <Button variant="outline" size="sm" onClick={() => handleReorder(order)}>
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Reorder
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm">
+                  View Details
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };
