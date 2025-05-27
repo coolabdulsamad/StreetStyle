@@ -1,4 +1,3 @@
-
 // Core types for the e-commerce application
 
 export type Address = {

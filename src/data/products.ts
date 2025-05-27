@@ -1,12 +1,12 @@
 
 import { Product } from '@/types/product';
-import { EXTENDED_PRODUCTS, CATEGORIES } from './extendedProducts';
+import { extendedProducts, CATEGORIES } from './extendedProducts';
 
 // Re-export from extendedProducts to maintain compatibility
 export { CATEGORIES } from './extendedProducts';
 
 // Use the extended products catalog
-export const PRODUCTS: Product[] = EXTENDED_PRODUCTS;
+export const PRODUCTS: Product[] = extendedProducts;
 
 export const getFeaturedProducts = () => {
   return PRODUCTS.filter((product) => product.featured);
