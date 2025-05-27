@@ -37,11 +37,11 @@ export interface ProductCategory {
   name: string;
   slug: string;
   description: string;
-  parent_id?: string | null;
-  image_url?: string | null;
-  is_active?: boolean;
-  display_order?: number;
-  created_at?: string;
+  parent_id: string | null;
+  image_url: string | null;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
 }
 
 export interface ProductTag {
