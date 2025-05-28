@@ -13,14 +13,15 @@ const CheckoutSuccessPage = () => {
   const [searchParams] = useSearchParams();
   const { clearCart } = useCart();
   const sessionId = searchParams.get('session_id');
+  const [messageShown, setMessageShown] = React.useState(false);
 
   useEffect(() => {
-    if (sessionId) {
-      // Clear the cart after successful payment
+    if (sessionId && !messageShown) {
       clearCart();
       toast.success('Payment successful! Your order has been placed.');
+      setMessageShown(true);
     }
-  }, [sessionId, clearCart]);
+  }, [sessionId, clearCart, messageShown]);
 
   return (
     <PageLayout>

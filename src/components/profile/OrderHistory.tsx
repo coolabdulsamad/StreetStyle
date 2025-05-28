@@ -1,14 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Package, Truck, CheckCircle, XCircle, Clock, RotateCcw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getUserOrders } from '@/lib/services/orderService';
+import { supabase } from '@/integrations/supabase/client';
 import { Order } from '@/lib/types';
 import { formatPrice } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const OrderHistory = () => {
   const { user } = useAuth();
@@ -21,10 +22,22 @@ const OrderHistory = () => {
       
       setIsLoading(true);
       try {
-        const userOrders = await getUserOrders();
-        setOrders(userOrders);
+        const data = await supabase
+          .from('orders')
+          .select(`
+            *,
+            order_items (*),
+            shipping_address (*),
+            billing_address (*)
+          `)
+          .eq('user_id', user.id.toString())
+          .order('created_at', { ascending: false });
+
+        if (data.error) throw data.error;
+        setOrders(data.data || []);
       } catch (error) {
         console.error('Error fetching orders:', error);
+        toast.error('Failed to load order history');
       } finally {
         setIsLoading(false);
       }

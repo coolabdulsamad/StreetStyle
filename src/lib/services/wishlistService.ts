@@ -1,13 +1,12 @@
-
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
 import { Product } from "@/lib/types";
 import { toast } from "sonner";
 
 export async function getUserWishlist(): Promise<Product[]> {
   try {
-    // Use as any to work around type issues until Supabase types are updated
-    const { data, error } = await (supabase
-      .from('wishlists' as any)
+    const { data, error } = await supabase
+      .from('wishlists')
       .select(`
         product_id,
         product:product_id (
@@ -24,22 +23,25 @@ export async function getUserWishlist(): Promise<Product[]> {
             logo_url
           )
         )
-      `));
+      `)
+      .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
     
     if (error) throw error;
     
     // Extract products from the response and add images
-    const products = await Promise.all((data || []).map(async (item: any) => {
-      const product = item.product as Product;
+    const products = await Promise.all((data || []).map(async (item) => {
+      const product = item.product as unknown as Product;
       
       // Get product images
-      const { data: imageData } = await supabase
-        .from('product_images' as any)
+      const { data: imageData, error: imageError } = await supabase
+        .from('product_images')
         .select('image_url')
         .eq('product_id', product.id)
         .order('display_order', { ascending: true });
+
+      if (imageError) throw imageError;
       
-      product.images = (imageData as any)?.map((img: any) => img.image_url) || [];
+      product.images = imageData?.map(img => img.image_url) || [];
       
       return {
         ...product,
@@ -55,37 +57,47 @@ export async function getUserWishlist(): Promise<Product[]> {
   }
 }
 
-export async function addToWishlist(productId: string): Promise<boolean> {
+export async function addToWishlist(productId: string): Promise<void> {
   try {
-    // Use as any to work around type issues until Supabase types are updated
-    const { error } = await (supabase
-      .from('wishlists' as any)
-      .insert([{ product_id: productId }]));
-    
-    if (error) {
-      if (error.code === '23505') { // Unique constraint violation
-        toast.info('This product is already in your wishlist');
-        return true;
-      }
-      throw error;
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    if (!userId) throw new Error('User not authenticated');
+
+    const { data: existingItem, error: checkError } = await supabase
+      .from('wishlists')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('product_id', productId)
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') throw checkError;
+
+    if (!existingItem) {
+      const { error } = await supabase
+        .from('wishlists')
+        .insert({
+          user_id: userId,
+          product_id: productId,
+        });
+
+      if (error) throw error;
+      toast.success('Added to wishlist');
     }
-    
-    toast.success('Added to wishlist');
-    return true;
   } catch (error) {
     console.error('Error adding to wishlist:', error);
     toast.error('Failed to add to wishlist');
-    return false;
   }
 }
 
 export async function removeFromWishlist(productId: string): Promise<boolean> {
   try {
-    // Use as any to work around type issues until Supabase types are updated
-    const { error } = await (supabase
-      .from('wishlists' as any)
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    if (!userId) throw new Error('User not authenticated');
+
+    const { error } = await supabase
+      .from('wishlists')
       .delete()
-      .eq('product_id', productId));
+      .eq('product_id', productId)
+      .eq('user_id', userId);
     
     if (error) throw error;
     
@@ -100,14 +112,17 @@ export async function removeFromWishlist(productId: string): Promise<boolean> {
 
 export async function isInWishlist(productId: string): Promise<boolean> {
   try {
-    // Use as any to work around type issues until Supabase types are updated
-    const { data, error } = await (supabase
-      .from('wishlists' as any)
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    if (!userId) return false;
+
+    const { data, error } = await supabase
+      .from('wishlists')
       .select('id')
       .eq('product_id', productId)
-      .single());
+      .eq('user_id', userId)
+      .single();
     
-    if (error && error.code !== 'PGRST116') { // Not PGRST116 (no rows returned)
+    if (error && error.code !== 'PGRST116') {
       throw error;
     }
     

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,18 +5,31 @@ import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
-import { Search, ShoppingCart, Heart, User, Menu, LogOut } from 'lucide-react';
+import { Search, ShoppingCart, Heart, User, Menu, LogOut, Loader2 } from 'lucide-react';
 
 const Navbar = () => {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, isLoading } = useAuth();
   const { totalItems } = useCart();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -119,7 +131,11 @@ const Navbar = () => {
           </Link>
 
           {/* User Menu */}
-          {user ? (
+          {isLoading ? (
+            <Button variant="ghost" size="icon" disabled>
+              <Loader2 className="h-5 w-5 animate-spin" />
+            </Button>
+          ) : user ? (
             <div className="flex items-center gap-2">
               <Link to="/account">
                 <Button variant="ghost" size="icon">
@@ -127,8 +143,17 @@ const Navbar = () => {
                   <span className="sr-only">Account</span>
                 </Button>
               </Link>
-              <Button variant="ghost" size="icon" onClick={logout}>
-                <LogOut className="h-5 w-5" />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+              >
+                {isLoggingOut ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <LogOut className="h-5 w-5" />
+                )}
                 <span className="sr-only">Log out</span>
               </Button>
             </div>

@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Order, OrderItem, Address } from "@/lib/types";
 import { toast } from "sonner";
 
-export async function getUserOrders(): Promise<Order[]> {
+export async function getUserOrders(id: string): Promise<Order[]> {
   const { data, error } = await supabase
     .from('orders' as any)
     .select('*')

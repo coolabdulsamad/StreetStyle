@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -22,7 +21,7 @@ import RegisterPage from "./pages/RegisterPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProductEdit from "./pages/admin/AdminProductEdit";
 import AdminProductNew from "./pages/admin/AdminProductNew";
-import ProfilePage from "./pages/ProfilePage";
+import AccountPage from "./pages/AccountPage";
 import FAQPage from "./pages/FAQPage";
 import ReturnsPage from "./pages/ReturnsPage";
 import ContactPage from "./pages/ContactPage";
@@ -94,14 +93,14 @@ const App = () => {
                     <WishlistPage />
                   </ProtectedRoute>
                 } />
-                <Route path="/profile" element={
-                  <ProtectedRoute>
-                    <ProfilePage />
-                  </ProtectedRoute>
-                } />
                 <Route path="/account" element={
                   <ProtectedRoute>
-                    <ProfilePage />
+                    <AccountPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <Navigate to="/account" replace />
                   </ProtectedRoute>
                 } />
                 <Route path="/search" element={<SearchPage />} />

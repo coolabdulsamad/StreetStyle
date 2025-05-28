@@ -12,7 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { PRODUCTS, CATEGORIES } from '@/data/products';
+import { supabase } from '@/integrations/supabase/client';
+// Remove mock data import
+// import { PRODUCTS, CATEGORIES } from '@/data/products';
 
 // Define the form validation schema
 const productFormSchema = z.object({
@@ -62,26 +64,42 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ productId }) => {
   // Fetch product data if in edit mode
   useEffect(() => {
     if (isEditMode && productId) {
+      // Mock data fetch
       const fetchProduct = async () => {
         setIsLoading(true);
-        
         try {
-          // Find product from mock data
-          const productData = PRODUCTS.find(p => p.id === productId);
-          
+          const { data: productData, error } = await supabase
+            .from('products')
+            .select(`
+              *,
+              category:category_id (*),
+              brand:brand_id (*)
+            `)
+            .eq('id', productId)
+            .single();
+  
+          if (error) throw error;
+  
           if (productData) {
             setProduct(productData);
-            setImageUrls(productData.images);
             
-            // Set form values with the correct property mappings
+            // Fetch product images
+            const { data: imageData } = await supabase
+              .from('product_images')
+              .select('image_url')
+              .eq('product_id', productId)
+              .order('display_order', { ascending: true });
+  
+            setImageUrls(imageData ? imageData.map(img => img.image_url) : []);
+  
             form.reset({
               name: productData.name || '',
               slug: productData.slug || '',
               description: productData.description || '',
               price: productData.price || 0,
-              category: productData.category.slug || '',
-              brand: productData.brand || '',
-              is_new: productData.new || false,
+              category: productData.category?.id || '',
+              brand: productData.brand?.id || '',
+              is_new: productData.is_new || false,
               is_sale: productData.is_sale || false,
               is_limited: productData.is_limited || false,
               stock_quantity: productData.stock_quantity || 0,
@@ -110,25 +128,41 @@ const AdminProductForm: React.FC<AdminProductFormProps> = ({ productId }) => {
   
   const onSubmit = async (data: ProductFormValues) => {
     setIsLoading(true);
-    
     try {
-      // Generate a new slug if one wasn't provided
-      if (!data.slug) {
-        data.slug = data.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
-      }
-      
-      // For now, just show success message since we're using mock data
+      const productData = {
+        name: data.name,
+        slug: data.slug,
+        description: data.description,
+        price: data.price,
+        category_id: data.category,
+        brand_id: data.brand,
+        is_new: data.is_new,
+        is_sale: data.is_sale,
+        is_limited: data.is_limited,
+        stock_quantity: data.stock_quantity
+      };
+  
       if (isEditMode) {
+        const { error } = await supabase
+          .from('products')
+          .update(productData)
+          .eq('id', productId);
+  
+        if (error) throw error;
         toast.success('Product updated successfully');
       } else {
+        const { error } = await supabase
+          .from('products')
+          .insert([productData]);
+  
+        if (error) throw error;
         toast.success('Product created successfully');
       }
-      
-      // Navigate back to product list
+  
       navigate('/admin');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving product:', error);
-      toast.error(`Failed to save product: ${error.message}`);
+      toast.error('Failed to save product');
     } finally {
       setIsLoading(false);
     }

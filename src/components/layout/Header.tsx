@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,7 @@ import {
 import { Search, ShoppingCart, Heart, User, Settings, LogOut, Shield } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -33,8 +33,10 @@ const Header = () => {
     try {
       await signOut();
       navigate('/');
+      toast.success('Successfully signed out');
     } catch (error) {
       console.error('Error signing out:', error);
+      toast.error('Failed to sign out');
     }
   };
 
@@ -42,69 +44,50 @@ const Header = () => {
   const wishlistItemCount = wishlist.length;
 
   return (
-    <header className="border-b bg-white">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="text-2xl font-bold text-primary">
-            StreetFlex
-          </Link>
+    <header className="sticky top-0 z-40 w-full bg-background border-b">
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        {/* Logo */}
+        <Link to="/" className="font-bold text-xl">
+          StreetStyle
+        </Link>
 
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Input
-                type="text"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pr-10"
-              />
-              <Button
-                type="submit"
-                size="icon"
-                variant="ghost"
-                className="absolute right-0 top-0 h-full"
-              >
-                <Search className="h-4 w-4" />
+        {/* Search */}
+        <form onSubmit={handleSearch} className="hidden md:flex max-w-sm flex-1 mx-4">
+          <Input
+            type="search"
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full"
+          />
+        </form>
+
+        {/* Actions */}
+        <div className="flex items-center space-x-4">
+          {user ? (
+            <>
+              <Button variant="ghost" size="icon" asChild className="relative">
+                <Link to="/wishlist">
+                  <Heart className="h-5 w-5" />
+                  {wishlistItemCount > 0 && (
+                    <Badge variant="destructive" className="absolute -top-1 -right-1">
+                      {wishlistItemCount}
+                    </Badge>
+                  )}
+                </Link>
               </Button>
-            </div>
-          </form>
 
-          {/* Right Side Actions */}
-          <div className="flex items-center space-x-4">
-            {/* Wishlist */}
-            <Button variant="ghost" size="icon" asChild className="relative">
-              <Link to="/wishlist">
-                <Heart className="h-5 w-5" />
-                {wishlistItemCount > 0 && (
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-                  >
-                    {wishlistItemCount}
-                  </Badge>
-                )}
-              </Link>
-            </Button>
+              <Button variant="ghost" size="icon" asChild className="relative">
+                <Link to="/cart">
+                  <ShoppingCart className="h-5 w-5" />
+                  {cartItemCount > 0 && (
+                    <Badge variant="destructive" className="absolute -top-1 -right-1">
+                      {cartItemCount}
+                    </Badge>
+                  )}
+                </Link>
+              </Button>
 
-            {/* Cart */}
-            <Button variant="ghost" size="icon" asChild className="relative">
-              <Link to="/cart">
-                <ShoppingCart className="h-5 w-5" />
-                {cartItemCount > 0 && (
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-                  >
-                    {cartItemCount}
-                  </Badge>
-                )}
-              </Link>
-            </Button>
-
-            {/* User Menu */}
-            {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon">
@@ -113,13 +96,13 @@ const Header = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem asChild>
-                    <Link to="/profile">
+                    <Link to="/account" className="w-full">
                       <User className="mr-2 h-4 w-4" />
-                      Profile
+                      Account
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/orders">
+                    <Link to="/orders" className="w-full">
                       <Settings className="mr-2 h-4 w-4" />
                       Orders
                     </Link>
@@ -128,49 +111,26 @@ const Header = () => {
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <Link to="/admin">
+                        <Link to="/admin" className="w-full">
                           <Shield className="mr-2 h-4 w-4" />
-                          Admin Dashboard
+                          Admin
                         </Link>
                       </DropdownMenuItem>
                     </>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
+                  <DropdownMenuItem onSelect={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : (
-              <Button asChild>
-                <Link to="/auth">Sign In</Link>
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile Search */}
-        <div className="md:hidden pb-4">
-          <form onSubmit={handleSearch}>
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pr-10"
-              />
-              <Button
-                type="submit"
-                size="icon"
-                variant="ghost"
-                className="absolute right-0 top-0 h-full"
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
-          </form>
+            </>
+          ) : (
+            <Button asChild>
+              <Link to="/login">Sign In</Link>
+            </Button>
+          )}
         </div>
       </div>
     </header>

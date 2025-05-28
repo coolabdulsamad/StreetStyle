@@ -1,27 +1,79 @@
-
-import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import PageLayout from '@/components/layout/PageLayout';
-import { useAuth } from '@/contexts/AuthContext';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PRODUCTS } from '@/data/products';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useState, useEffect } from 'react';
+import { Navigate, Link } from 'react-router-dom';
+import PageLayout from 'components/layout/PageLayout';
+import { useAuth } from 'contexts/AuthContext';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from 'components/ui/tabs';
+import { Button } from 'components/ui/button';
+import { supabase } from 'integrations/supabase/client';
+import { toast } from 'sonner';
+import { Product } from 'lib/types';
+import AdminOrderList from './admin/AdminOrderList';
+import AdminUsersList from './admin/AdminUsersList';
 
 const AdminDashboard = () => {
   const { user, isAdmin } = useAuth();
-  const [productList, setProductList] = useState(PRODUCTS);
-  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select(
+          '*, category:category_id (*), brand:brand_id (*)'
+        );
+
+      if (error) throw error;
+
+      // Fetch images for each product
+      const productsWithImages = await Promise.all((data || []).map(async (product) => {
+        const { data: imageData } = await supabase
+          .from('product_images')
+          .select('image_url')
+          .eq('product_id', product.id)
+          .order('display_order', { ascending: true });
+
+        return {
+          ...product,
+          images: imageData ? imageData.map((img: any) => img.image_url) : [],
+          variants: product.variants || []
+        };
+      }));
+
+      setProducts(productsWithImages as Product[]);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      toast.error('Failed to load products');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId); // Remove parseInt as ID might be UUID
+
+      if (error) throw error;
+      toast.success('Product deleted successfully');
+      fetchProducts(); // Refresh the list
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast.error('Failed to delete product');
+    }
+  };
 
   // If not logged in or not an admin, redirect to login
   if (!user || !isAdmin) {
     return <Navigate to="/login" />;
   }
-
-  const handleDeleteProduct = (productId: string) => {
-    setProductList(productList.filter(p => p.id !== productId));
-    // In a real app, you'd make an API call to delete the product
-  };
 
   return (
     <PageLayout>
@@ -38,180 +90,100 @@ const AdminDashboard = () => {
           <TabsContent value="products">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold">Product Management</h2>
-              <Button>Add New Product</Button>
+              <Button asChild>
+                <Link to="/admin/products/new">Add New Product</Link>
+              </Button>
             </div>
 
-            <div className="bg-white rounded-md shadow overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Product
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Price
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Category
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {productList.map(product => (
-                    <tr key={product.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 flex-shrink-0">
-                            <img
-                              className="h-10 w-10 object-cover rounded"
-                              src={product.images[0]}
-                              alt={product.name}
-                            />
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {product.name}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {product.variants.length} variants
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">${product.price}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {product.category.name}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.featured ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                          {product.featured ? 'Featured' : 'Standard'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <Button variant="ghost" className="text-blue-600 hover:text-blue-900 mr-2">
-                          Edit
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          className="text-red-600 hover:text-red-900"
-                          onClick={() => handleDeleteProduct(product.id)}
-                        >
-                          Delete
-                        </Button>
-                      </td>
+            {isLoading ? (
+              <div className="text-center py-8">Loading products...</div>
+            ) : (
+              <div className="bg-white rounded-md shadow overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Product
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Price
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Category
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {products.map(product => (
+                      <tr key={product.id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="h-10 w-10 flex-shrink-0">
+                              <img
+                                className="h-10 w-10 object-cover rounded"
+                                src={product.images[0]}
+                                alt={product.name}
+                              />
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {product.name}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {product.variants.length} variants
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">${product.price}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {product.category.name}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.featured ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                            {product.featured ? 'Featured' : 'Standard'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <Button
+                            variant="ghost"
+                            className="text-blue-600 hover:text-blue-900 mr-2"
+                            asChild
+                          >
+                            <Link to={`/admin/products/${product.id}/edit`}>Edit</Link>
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            className="text-red-600 hover:text-red-900"
+                            onClick={() => handleDeleteProduct(product.id)}
+                          >
+                            Delete
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="orders">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">Order Management</h2>
-              <div className="relative w-64">
-                <Input placeholder="Search orders..." />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                  <svg
-                    className="h-5 w-5 text-gray-400"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-md shadow p-6">
-              <p className="text-center text-gray-500">No orders to display</p>
-            </div>
+            <AdminOrderList />
           </TabsContent>
 
           <TabsContent value="users">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">User Management</h2>
-              <Button>Add New User</Button>
-            </div>
-
-            <div className="bg-white rounded-md shadow overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        Admin User
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">admin@example.com</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                        Admin
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Button variant="ghost" className="text-blue-600 hover:text-blue-900">
-                        Edit
-                      </Button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        Normal User
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">user@example.com</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                        Customer
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Button variant="ghost" className="text-blue-600 hover:text-blue-900">
-                        Edit
-                      </Button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <AdminUsersList />
           </TabsContent>
         </Tabs>
       </div>
