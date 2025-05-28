@@ -14,6 +14,7 @@ import ProductListPage from "./pages/ProductListPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
+import CheckoutSuccessPage from "./pages/CheckoutSuccessPage";
 import WishlistPage from "./pages/WishlistPage";
 import SearchPage from "./pages/SearchPage";
 import LoginPage from "./pages/LoginPage";
@@ -22,6 +23,10 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProductEdit from "./pages/admin/AdminProductEdit";
 import AdminProductNew from "./pages/admin/AdminProductNew";
 import ProfilePage from "./pages/ProfilePage";
+import FAQPage from "./pages/FAQPage";
+import ReturnsPage from "./pages/ReturnsPage";
+import ContactPage from "./pages/ContactPage";
+import SizeGuidePage from "./pages/SizeGuidePage";
 import { supabase } from "@/integrations/supabase/client";
 
 // Initialize queryClient with default options
@@ -79,6 +84,11 @@ const App = () => {
                     <CheckoutPage />
                   </ProtectedRoute>
                 } />
+                <Route path="/checkout/success" element={
+                  <ProtectedRoute>
+                    <CheckoutSuccessPage />
+                  </ProtectedRoute>
+                } />
                 <Route path="/wishlist" element={
                   <ProtectedRoute>
                     <WishlistPage />
@@ -97,6 +107,10 @@ const App = () => {
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/faq" element={<FAQPage />} />
+                <Route path="/returns" element={<ReturnsPage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/size-guide" element={<SizeGuidePage />} />
                 <Route path="/admin" element={
                   <ProtectedRoute requireAdmin={true}>
                     <AdminDashboard />

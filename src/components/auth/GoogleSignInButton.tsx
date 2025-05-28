@@ -11,7 +11,6 @@ const GoogleSignInButton: React.FC = () => {
       await signInWithGoogle();
     } catch (error) {
       console.error('Google sign-in error:', error);
-      // Error is handled in the auth context
     }
   };
 

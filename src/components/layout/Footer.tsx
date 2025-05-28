@@ -1,8 +1,22 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
 const Footer = () => {
+  const [email, setEmail] = useState('');
+
+  const handleNewsletterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email) {
+      // Here you would typically send the email to your backend
+      toast.success('Successfully subscribed to newsletter!');
+      setEmail('');
+    }
+  };
+
   return (
     <footer className="bg-brand-dark text-brand-light py-12">
       <div className="container mx-auto px-4">
@@ -54,10 +68,10 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-4">Help</h3>
             <ul className="space-y-2">
               <li><Link to="/faq" className="text-gray-400 hover:text-primary transition-colors">FAQ</Link></li>
-              <li><Link to="/shipping" className="text-gray-400 hover:text-primary transition-colors">Shipping</Link></li>
               <li><Link to="/returns" className="text-gray-400 hover:text-primary transition-colors">Returns</Link></li>
               <li><Link to="/contact" className="text-gray-400 hover:text-primary transition-colors">Contact Us</Link></li>
               <li><Link to="/size-guide" className="text-gray-400 hover:text-primary transition-colors">Size Guide</Link></li>
+              <li><Link to="/shipping" className="text-gray-400 hover:text-primary transition-colors">Shipping</Link></li>
             </ul>
           </div>
 
@@ -65,19 +79,21 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4">Newsletter</h3>
             <p className="text-gray-400 mb-4">Subscribe to get special offers, free giveaways, and releases.</p>
-            <form className="flex flex-col space-y-2">
-              <input
+            <form onSubmit={handleNewsletterSubmit} className="flex flex-col space-y-2">
+              <Input
                 type="email"
                 placeholder="Your email"
-                className="px-4 py-2 bg-gray-800 rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="px-4 py-2 bg-gray-800 text-white rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
                 required
               />
-              <button
+              <Button
                 type="submit"
                 className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
               >
                 Subscribe
-              </button>
+              </Button>
             </form>
           </div>
         </div>

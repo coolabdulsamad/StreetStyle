@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -10,18 +10,27 @@ import { useAuth } from '@/contexts/AuthContext';
 import AddressList from '@/components/profile/AddressList';
 import ProfileForm from '@/components/profile/ProfileForm';
 import PasswordChangeForm from '@/components/profile/PasswordChangeForm';
+import OrderHistory from '@/components/profile/OrderHistory';
 import { User, Lock, MapPin, ShoppingBag } from 'lucide-react';
 
 const ProfilePage = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, profile } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("personal-info");
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || "personal-info");
 
   useEffect(() => {
     if (!user) {
       navigate("/login");
     }
   }, [user, navigate]);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   const handleLogout = async () => {
     try {
@@ -42,6 +51,10 @@ const ProfilePage = () => {
     );
   }
 
+  const displayName = profile ? 
+    `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || user.email : 
+    user.email;
+
   const menuItems = [
     { id: 'personal-info', label: 'Personal Information', icon: <User className="h-4 w-4 mr-2" /> },
     { id: 'security', label: 'Security', icon: <Lock className="h-4 w-4 mr-2" /> },
@@ -52,7 +65,10 @@ const ProfilePage = () => {
   return (
     <PageLayout>
       <div className="container max-w-5xl py-10">
-        <h1 className="text-3xl font-bold mb-6">Account Settings</h1>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Account Settings</h1>
+          <p className="text-muted-foreground">Welcome back, {displayName}!</p>
+        </div>
         
         <div className="grid grid-cols-12 gap-6">
           {/* Sidebar */}
@@ -135,18 +151,11 @@ const ProfilePage = () => {
                 <CardHeader>
                   <CardTitle>Order History</CardTitle>
                   <CardDescription>
-                    View your past orders
+                    View and track your orders
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">
-                      You haven't placed any orders yet.
-                    </p>
-                    <Button className="mt-4" onClick={() => navigate("/products")}>
-                      Browse Products
-                    </Button>
-                  </div>
+                  <OrderHistory />
                 </CardContent>
               </Card>
             )}

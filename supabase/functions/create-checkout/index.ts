@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { amount, currency = 'usd', items } = await req.json();
+    const { items } = await req.json();
 
     // Create Supabase client
     const supabaseClient = createClient(
@@ -32,8 +32,8 @@ serve(async (req) => {
       throw new Error("User not authenticated");
     }
 
-    // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    // Initialize Stripe with your secret key
+    const stripe = new Stripe("sk_test_51RTFj9DBJkLtPHUrzm1KMGH2uEW6e99GG0YmGnu7ZwkjFrQRmNseyVuhrd2im1xxWKdc6cePx3bdBX4Xwi2fGxfN00rEIqu8jj", {
       apiVersion: "2023-10-16",
     });
 
@@ -51,10 +51,10 @@ serve(async (req) => {
     // Create line items from cart items
     const lineItems = items.map((item: any) => ({
       price_data: {
-        currency,
+        currency: 'usd',
         product_data: {
           name: item.product.name,
-          images: item.product.images.slice(0, 1), // Stripe allows max 8 images
+          images: item.product.images.slice(0, 1),
         },
         unit_amount: Math.round(item.variant.price * 100), // Convert to cents
       },
