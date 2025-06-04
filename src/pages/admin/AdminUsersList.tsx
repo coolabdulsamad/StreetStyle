@@ -1,207 +1,267 @@
-
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+// @/pages/admin/AdminUserList.tsx
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Loader2, Search, Filter, RefreshCcw } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { getAllUsers, updateUserRole, AppUser } from '@/lib/services/userService';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'; // Import AlertDialog components
+import { Label } from '@radix-ui/react-label';
 
-type UserWithProfile = {
-  id: string;
-  email: string;
-  created_at: string;
-  last_sign_in_at: string;
-  profile: {
-    first_name: string | null;
-    last_name: string | null;
-    avatar_url: string | null;
-    phone: string | null;
-  } | null;
-  roles: string[];
-};
+// Define possible roles for display and selection
+const ROLES = ['customer', 'admin', 'rider'];
 
-const AdminUsersList: React.FC = () => {
-  const [users, setUsers] = useState<UserWithProfile[]>([]);
+const AdminUserList = () => {
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<AppUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const { isAdmin } = useAuth();
-  
-  const fetchUsers = async () => {
+  const [isUpdatingRole, setIsUpdatingRole] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+
+  // State for secret code modal
+  const [showSecretCodeModal, setShowSecretCodeModal] = useState(false);
+  const [secretCodeInput, setSecretCodeInput] = useState('');
+  const [pendingRoleChange, setPendingRoleChange] = useState<{ userId: string; newRole: string | null } | null>(null);
+
+  const fetchUsers = useCallback(async () => {
     setIsLoading(true);
-    try {
-      // Fetch users from Supabase Auth
-      const { data, error } = await supabase.auth.admin.listUsers();
-      
-      if (error) throw error;
-      
-      // Fetch profiles for all users
-      const userIds = data.users.map(user => user.id);
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .in('id', userIds);
-      
-      if (profilesError) throw profilesError;
-      
-      // Fetch roles for all users
-      const { data: rolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('*')
-        .in('user_id', userIds);
-      
-      if (rolesError) throw rolesError;
-      
-      // Map profiles and roles to users
-      const usersWithProfiles = data.users.map(user => {
-        const profile = profilesData?.find(p => p.id === user.id);
-        const userRoles = rolesData?.filter(r => r.user_id === user.id) || [];
-        
-        return {
-          id: user.id,
-          email: user.email,
-          created_at: user.created_at,
-          last_sign_in_at: user.last_sign_in_at,
-          profile: profile ? {
-            first_name: profile.first_name,
-            last_name: profile.last_name,
-            avatar_url: profile.avatar_url,
-            phone: profile.phone
-          } : null,
-          roles: userRoles.map(r => r.role)
-        };
-      });
-      
-      setUsers(usersWithProfiles);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      toast.error('Failed to load users. You may not have admin privileges.');
-    } finally {
-      setIsLoading(false);
+    const { users: fetchedUsers, error } = await getAllUsers();
+    if (error) {
+      toast.error(error.message || 'Failed to fetch users.');
+      setUsers([]);
+    } else {
+      setUsers(fetchedUsers);
     }
-  };
-  
+    setIsLoading(false);
+  }, []);
+
   useEffect(() => {
-    if (isAdmin) {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  useEffect(() => {
+    let currentUsers = users;
+
+    if (searchTerm) {
+      currentUsers = currentUsers.filter(user =>
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.last_name?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (roleFilter !== 'all') {
+      if (roleFilter === 'no-role') {
+        currentUsers = currentUsers.filter(user => user.role === null);
+      } else {
+        currentUsers = currentUsers.filter(user => user.role === roleFilter);
+      }
+    }
+
+    setFilteredUsers(currentUsers);
+  }, [users, searchTerm, roleFilter]);
+
+  const handleRoleChangeInitiate = (userId: string, newRoleValue: string) => {
+    const roleToSend = newRoleValue === 'no-role' ? null : newRoleValue;
+    setPendingRoleChange({ userId, newRole: roleToSend });
+    setShowSecretCodeModal(true);
+  };
+
+  const handleConfirmRoleChange = async () => {
+    if (!pendingRoleChange || !secretCodeInput.trim()) {
+      toast.error('Secret code is required.');
+      return;
+    }
+
+    setIsUpdatingRole(true);
+    const success = await updateUserRole(
+      pendingRoleChange.userId,
+      pendingRoleChange.newRole,
+      secretCodeInput.trim()
+    );
+    setIsUpdatingRole(false);
+    setShowSecretCodeModal(false);
+    setSecretCodeInput('');
+    setPendingRoleChange(null);
+
+    if (success) {
+      // Re-fetch all users to ensure the UI is fully consistent with the database,
+      // especially after rider table changes.
       fetchUsers();
     }
-  }, [isAdmin]);
-  
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Filter users based on search query
-    fetchUsers();
   };
-  
-  const filteredUsers = searchQuery.trim() === '' 
-    ? users 
-    : users.filter(user => 
-        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (user.profile?.first_name && user.profile.first_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (user.profile?.last_name && user.profile.last_name.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-  
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">User Management</h2>
-        <div className="relative w-64">
-          <form onSubmit={handleSearch} className="flex gap-2">
-            <Input
-              placeholder="Search users..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1"
-            />
-            <Button type="submit">Search</Button>
-          </form>
-        </div>
+
+  const handleCancelSecretCode = () => {
+    setShowSecretCodeModal(false);
+    setSecretCodeInput('');
+    setPendingRoleChange(null);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="mr-2 h-8 w-8 animate-spin" /> Loading users...
       </div>
-      
-      {isLoading ? (
-        <div className="p-8 text-center bg-white rounded-md shadow">
-          <p>Loading users...</p>
-        </div>
-      ) : filteredUsers.length === 0 ? (
-        <div className="p-8 text-center bg-white rounded-md shadow">
-          <p>No users found.</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-md shadow overflow-hidden">
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold">User Management</h1>
+      <Card>
+        <CardHeader>
+          <CardTitle>All Users</CardTitle>
+          <CardDescription>View, search, filter, and manage user roles.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4 mb-4">
+            <div className="relative flex-grow">
+              <Input
+                placeholder="Search by email, ID, first name, or last name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            </div>
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <Filter className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Filter by Role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="no-role">No Role</SelectItem>
+                {ROLES.map(role => (
+                  <SelectItem key={role} value={role}>{role.charAt(0).toUpperCase() + role.slice(1)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={() => { setSearchTerm(''); setRoleFilter('all'); fetchUsers(); }}>
+              <RefreshCcw className="mr-2 h-4 w-4" /> Reset & Refresh
+            </Button>
+          </div>
+
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
+                <TableHead>User ID</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Joined</TableHead>
-                <TableHead>Last Sign In</TableHead>
+                <TableHead>Name</TableHead>
                 <TableHead>Role</TableHead>
+                <TableHead>Created At</TableHead>
+                <TableHead>Last Sign-In</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map(user => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
-                        {user.profile?.avatar_url ? (
-                          <img
-                            src={user.profile.avatar_url}
-                            alt={`${user.profile.first_name || ''} ${user.profile.last_name || ''}`}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-gray-500 text-xs">
-                            {user.profile?.first_name?.[0] || user.email[0].toUpperCase()}
-                          </span>
-                        )}
-                      </div>
-                      <div className="ml-2">
-                        {user.profile?.first_name || user.profile?.last_name ? (
-                          <div className="font-medium">
-                            {user.profile.first_name} {user.profile.last_name}
-                          </div>
-                        ) : (
-                          <div className="font-medium text-gray-500">No name</div>
-                        )}
-                        {user.profile?.phone && (
-                          <div className="text-xs text-gray-500">{user.profile.phone}</div>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    {new Date(user.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    {user.last_sign_in_at ? 
-                      new Date(user.last_sign_in_at).toLocaleDateString() : 
-                      'Never'}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {user.roles.includes('admin') && (
-                        <Badge variant="default">Admin</Badge>
-                      )}
-                      {user.roles.includes('customer') && (
-                        <Badge variant="outline">Customer</Badge>
-                      )}
-                      {user.roles.length === 0 && (
-                        <Badge variant="secondary">No Role</Badge>
-                      )}
-                    </div>
+              {filteredUsers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
+                    No users found matching your criteria.
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                filteredUsers.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium text-xs">{user.id.substring(0, 8)}...</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.first_name || 'N/A'} {user.last_name || ''}</TableCell>
+                    <TableCell>
+                      <Select
+                        value={user.role || 'no-role'}
+                        onValueChange={(newRole) => handleRoleChangeInitiate(user.id, newRole)} // Call initiate function
+                        disabled={isUpdatingRole}
+                      >
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue placeholder="Select Role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="no-role">No Role</SelectItem>
+                          {ROLES.map(role => (
+                            <SelectItem key={role} value={role}>{role.charAt(0).toUpperCase() + role.slice(1)}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>{user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'Never'}</TableCell>
+                    <TableCell className="text-right">
+                      {/* Placeholder for future actions */}
+                      <Button variant="outline" size="sm" disabled>View Details</Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
-        </div>
-      )}
+        </CardContent>
+      </Card>
+
+      {/* Secret Code Confirmation Dialog */}
+      <AlertDialog open={showSecretCodeModal} onOpenChange={setShowSecretCodeModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Role Change</AlertDialogTitle>
+            <AlertDialogDescription>
+              To change the user's role to "{pendingRoleChange?.newRole || 'No Role'}", please enter the admin secret code.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label htmlFor="secret-code-input">Admin Secret Code</Label>
+            <Input
+              id="secret-code-input"
+              type="password"
+              value={secretCodeInput}
+              onChange={(e) => setSecretCodeInput(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleConfirmRoleChange();
+                }
+              }}
+              disabled={isUpdatingRole}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelSecretCode} disabled={isUpdatingRole}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmRoleChange} disabled={isUpdatingRole}>
+              {isUpdatingRole ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
 
-export default AdminUsersList;
+export default AdminUserList;

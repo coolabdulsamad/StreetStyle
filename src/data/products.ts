@@ -1,33 +1,16 @@
+// @/data/products.ts
 
-import { Product } from '@/types/product';
-import { extendedProducts, CATEGORIES } from './extendedProducts';
+// This file previously contained mock product data.
+// It is now emptied as product data will be fetched from the Supabase database
+// via `src/services/productService.ts`.
 
-// Use the extended products catalog
-export const PRODUCTS: Product[] = extendedProducts;
+// Any components or hooks that were directly importing from here should be updated
+// to use the actual data fetching services.
 
-// Re-export categories
-export { CATEGORIES };
+export const PRODUCTS: any[] = [];
+export const CATEGORIES: any[] = [];
 
-export const getFeaturedProducts = () => {
-  return PRODUCTS.filter((product) => product.featured);
-};
-
-export const getNewProducts = () => {
-  return PRODUCTS.filter((product) => product.new);
-};
-
-export const getProductBySlug = (slug: string): Product | undefined => {
-  return PRODUCTS.find(product => product.slug === slug);
-};
-
-export const searchProducts = (query: string): Product[] => {
-  if (!query.trim()) return [];
-  
-  const lowercaseQuery = query.toLowerCase();
-  return PRODUCTS.filter(product => 
-    product.name.toLowerCase().includes(lowercaseQuery) ||
-    product.description.toLowerCase().includes(lowercaseQuery) ||
-    product.category.name.toLowerCase().includes(lowercaseQuery) ||
-    product.tags.some(tag => tag.name.toLowerCase().includes(lowercaseQuery))
-  );
-};
+export const getFeaturedProducts = () => [];
+export const getNewProducts = () => [];
+export const getProductBySlug = (slug: string) => undefined;
+export const searchProducts = (query: string) => [];

@@ -1,7 +1,9 @@
 
 import React from 'react';
 import ProductCard from './ProductCard';
-import { Product } from '@/types/product';
+// import { Product } from '@/types/product';
+// New, correct import in ProductGrid.tsx
+import { Product } from '@/lib/types';
 import { 
   Pagination, 
   PaginationContent, 

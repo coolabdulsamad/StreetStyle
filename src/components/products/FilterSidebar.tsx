@@ -3,7 +3,7 @@ import React from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { ProductTag } from '@/types/product';
+import { ProductTag } from '@/lib/types';
 import { Slider } from '@/components/ui/slider';
 
 interface FilterSidebarProps {

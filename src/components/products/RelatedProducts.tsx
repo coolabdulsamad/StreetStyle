@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Product } from '@/types/product';
+import { Product } from '@/lib/types';
 import ProductCard from '@/components/products/ProductCard';
 
 interface RelatedProductsProps {

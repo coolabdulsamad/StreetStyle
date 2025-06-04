@@ -1,88 +1,156 @@
+// supabase/functions/create-checkout/index.ts
+// This function handles creating orders in Supabase and initiating Paystack transactions.
 
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.42.0'; // Use your Supabase JS client version
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Import the shared utility functions
+import { validateCartItems } from '../_shared/validateCartItems.ts';
+import { PaystackClient } from '../_shared/paystackClient.ts';
 
+// Initialize Paystack client with secret key from environment variables.
+const PAYSTACK_SECRET_KEY = Deno.env.get('PAYSTACK_SECRET_KEY')!;
+const paystack = new PaystackClient(PAYSTACK_SECRET_KEY);
+
+// The main handler for the Edge Function
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', {
+      headers: {
+        'Access-Control-Allow-Origin': Deno.env.get('FRONTEND_URL') || '*', // Use specific URL in production
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      },
+    });
   }
 
-  try {
-    const { items } = await req.json();
-
-    // Create Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-    );
-
-    // Get authenticated user
-    const authHeader = req.headers.get("Authorization")!;
-    const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseClient.auth.getUser(token);
-    const user = data.user;
-    
-    if (!user?.email) {
-      throw new Error("User not authenticated");
-    }
-
-    // Initialize Stripe with your secret key
-    const stripe = new Stripe("sk_test_51RTFj9DBJkLtPHUrzm1KMGH2uEW6e99GG0YmGnu7ZwkjFrQRmNseyVuhrd2im1xxWKdc6cePx3bdBX4Xwi2fGxfN00rEIqu8jj", {
-      apiVersion: "2023-10-16",
-    });
-
-    // Check if customer exists
-    const customers = await stripe.customers.list({ 
-      email: user.email, 
-      limit: 1 
-    });
-    
-    let customerId;
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
-    }
-
-    // Create line items from cart items
-    const lineItems = items.map((item: any) => ({
-      price_data: {
-        currency: 'usd',
-        product_data: {
-          name: item.product.name,
-          images: item.product.images.slice(0, 1),
-        },
-        unit_amount: Math.round(item.variant.price * 100), // Convert to cents
+  // Create a Supabase client with the SERVICE_ROLE_KEY.
+  const supabaseClient = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    {
+      auth: {
+        persistSession: false,
       },
+    }
+  );
+
+  try {
+    const { items, shipping_address_id, billing_address_id, payment_method, user_id } = await req.json();
+
+    if (!user_id || !items || items.length === 0 || !shipping_address_id || !payment_method) {
+      throw new Error('Missing required checkout data.');
+    }
+
+    // Validate cart items and calculate total amount securely on the backend
+    const { validatedItems, totalAmount, error: validationError } = await validateCartItems(supabaseClient, items);
+
+    if (validationError) {
+      throw new Error(validationError);
+    }
+
+    // 1. Create the Order in public.orders table
+    const { data: orderData, error: orderError } = await supabaseClient
+      .from('orders')
+      .insert({
+        user_id: user_id,
+        total: totalAmount,
+        status: payment_method === 'cod' ? 'pending' : 'pending_payment',
+        payment_method: payment_method,
+        shipping_address_id: shipping_address_id,
+        billing_address_id: billing_address_id,
+      })
+      .select('id')
+      .single();
+
+    if (orderError) {
+      console.error('Error creating order:', orderError);
+      throw new Error('Failed to create order.');
+    }
+    const orderId = orderData.id;
+
+    // 2. Create Order Items in public.order_items table
+    const orderItemsToInsert = validatedItems.map(item => ({
+      order_id: orderId,
+      product_id: item.product_id,
+      variant_id: item.variant_id,
       quantity: item.quantity,
+      price: item.price,
     }));
 
-    // Create checkout session
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      customer_email: customerId ? undefined : user.email,
-      line_items: lineItems,
-      mode: "payment",
-      success_url: `${req.headers.get("origin")}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/cart`,
-      metadata: {
-        user_id: user.id,
-      },
-    });
+    const { error: orderItemsError } = await supabaseClient
+      .from('order_items')
+      .insert(orderItemsToInsert);
 
-    return new Response(JSON.stringify({ url: session.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    if (orderItemsError) {
+      console.error('Error inserting order items:', orderItemsError);
+      throw new Error('Failed to create order items.');
+    }
+
+    // 3. Clear the user's cart
+    const { error: clearCartError } = await supabaseClient
+      .from('cart_items')
+      .delete()
+      .eq('user_id', user_id);
+
+    if (clearCartError) {
+      console.error('Failed to clear cart:', clearCartError);
+    }
+
+    // 4. Handle Payment Method: Paystack or Cash on Delivery
+    let responseData: any = { orderId };
+
+    if (payment_method === 'paystack') {
+      // Fetch user's email for Paystack transaction
+      const { data: userData, error: userError } = await supabaseClient.auth.admin.getUserById(user_id);
+      if (userError || !userData.user?.email) {
+        throw new Error(`Failed to get user email for Paystack: ${userError?.message}`);
+      }
+      const customerEmail = userData.user.email;
+
+      const callbackUrl = `${Deno.env.get('FRONTEND_URL')}/checkout/success?orderId=${orderId}`;
+
+      const paystackResponse = await paystack.initializePayment({
+        email: customerEmail,
+        amount: totalAmount * 100, // Paystack expects amount in kobo
+        reference: orderId,
+        callback_url: callbackUrl,
+        metadata: {
+          order_id: orderId,
+          user_id: user_id,
+        },
+      });
+
+      if (!paystackResponse.status) {
+        console.error('Paystack initialization failed:', paystackResponse.message);
+        throw new Error(paystackResponse.message || 'Failed to initialize Paystack payment.');
+      }
+      responseData.url = paystackResponse.data.authorization_url;
+
+    } else if (payment_method === 'cod') {
+      // For Cash on Delivery, return success with orderId
+      console.log('COD order placed for order:', orderId);
+    } else {
+      throw new Error('Invalid payment method provided.');
+    }
+
+    return new Response(JSON.stringify(responseData), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': Deno.env.get('FRONTEND_URL') || '*', // Use specific URL in production
+      },
       status: 200,
     });
-  } catch (error) {
-    console.error('Error creating checkout session:', error);
+
+  } catch (error: any) {
+    console.error('Supabase Function Error:', error.message);
     return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': Deno.env.get('FRONTEND_URL') || '*', // Use specific URL in production
+      },
+      status: 400,
     });
   }
 });

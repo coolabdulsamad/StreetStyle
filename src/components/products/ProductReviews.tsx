@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Star } from 'lucide-react';
-import { ProductReview } from '@/types/product';
+import { ProductReview } from '@/lib/types';
 
 interface ProductReviewsProps {
   reviews: ProductReview[];

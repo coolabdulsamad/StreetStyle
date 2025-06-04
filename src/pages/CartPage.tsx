@@ -72,18 +72,24 @@ const CartPage = () => {
                     {items.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell>
-                          <div className="w-20 h-20 overflow-hidden rounded">
+                          {/* Make the product image clickable */}
+                          {/* <Link to={`/products/${item.product.slug}`} className="block w-20 h-20 overflow-hidden rounded cursor-pointer"> */}
                             <img 
-                              src={item.product.images[0]} 
+                              src={item.product.images[0]?.image_url} 
                               alt={item.product.name} 
                               className="w-full h-full object-cover"
                               onError={(e) => {
                                 (e.target as HTMLImageElement).src = "/placeholder.svg";
                               }}
                             />
-                          </div>
+                          {/* </Link> */}
                         </TableCell>
-                        <TableCell className="font-medium">{item.product.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {/* Make the product name clickable */}
+                          {/* <Link to={`/products/${item.product.slug}`} className="hover:underline"> */}
+                            {item.product.name}
+                          {/* </Link> */}
+                        </TableCell>
                         <TableCell>{item.variant.name}</TableCell>
                         <TableCell>${item.variant.price.toFixed(2)}</TableCell>
                         <TableCell>

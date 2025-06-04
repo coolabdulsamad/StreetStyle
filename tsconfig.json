@@ -5,6 +5,10 @@
     { "path": "./tsconfig.node.json" }
   ],
   "compilerOptions": {
+    "jsx": "react-jsx", // or "react" if you're using older React
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "target": "ES6",
     "baseUrl": ".",
     "paths": {
       "components/*": ["src/components/*"],

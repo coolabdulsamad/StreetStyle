@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom'; // Assuming react-router-dom is still in use for now
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { toast } from 'sonner';
 import { Shield, Eye, EyeOff } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
+// import { Checkbox } from '@/components/ui/checkbox'; // REMOVE THIS IMPORT if not used elsewhere in this file
 import { Separator } from '@/components/ui/separator';
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 
@@ -22,12 +22,13 @@ const loginSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
+// REMOVED isAdmin from the registerSchema
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(6, "Please confirm your password"),
-  isAdmin: z.boolean().optional(),
+  // isAdmin: z.boolean().optional(), // REMOVED THIS LINE
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -45,26 +46,19 @@ const LoginPage = () => {
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [activeTab, setActiveTab] = useState<string>(() => {
-    // Set active tab based on location state
     return location.state?.defaultTab || "login";
   });
 
-  // Check if this is an admin login attempt
   const isAdminLogin = location.state?.isAdmin;
-
-  // Get the return URL from location state or default to home page
   const from = location.state?.from?.pathname || location.state?.from || "/";
 
-  // Redirect if user is already logged in
   useEffect(() => {
     if (user) {
-      // If admin login, redirect to admin dashboard, otherwise go to original destination
       const redirectPath = isAdminLogin ? "/admin" : from;
       navigate(redirectPath, { replace: true });
     }
   }, [user, navigate, from, isAdminLogin]);
 
-  // Login form
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -73,7 +67,6 @@ const LoginPage = () => {
     },
   });
 
-  // Register form
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -81,26 +74,24 @@ const LoginPage = () => {
       email: "",
       password: "",
       confirmPassword: "",
-      isAdmin: false,
+      // isAdmin: false, // REMOVED THIS LINE
     },
   });
 
-  // Handle login form submission
   const handleLogin = async (values: LoginFormValues) => {
     setIsLoading(true);
     try {
       await login(values.email, values.password);
-      // Redirect will happen automatically via useEffect when user state updates
     } catch (error) {
-      // Error is displayed via toast in AuthContext
       setIsLoading(false);
     }
   };
 
-  // Handle register form submission
   const handleRegister = async (values: RegisterFormValues) => {
     setIsLoading(true);
     try {
+      // The registerUser function in AuthContext already handles creating the profile
+      // and the database trigger handles assigning the default 'customer' role.
       await registerUser(values.email, values.password, values.name);
       toast.success("Registration successful! You can now login.");
       setActiveTab("login");
@@ -303,7 +294,8 @@ const LoginPage = () => {
                         </FormItem>
                       )}
                     />
-                    <FormField
+                    {/* REMOVED THE ADMIN CHECKBOX FIELD */}
+                    {/* <FormField
                       control={registerForm.control}
                       name="isAdmin"
                       render={({ field }) => (
@@ -321,7 +313,7 @@ const LoginPage = () => {
                           </div>
                         </FormItem>
                       )}
-                    />
+                    /> */}
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? "Creating account..." : "Create Account"}
                     </Button>

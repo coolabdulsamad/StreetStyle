@@ -1,96 +1,86 @@
+// @/lib/services/userService.ts
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-import { supabase } from "@/integrations/supabase/client";
-import { UserProfile } from "@/contexts/AuthContext";
-import { toast } from "sonner";
-
-export async function updateUserProfile(
-  data: Partial<UserProfile>
-): Promise<UserProfile | null> {
-  try {
-    const { error } = await supabase
-      .from('profiles')
-      .update(data)
-      .eq('id', data.id);
-    
-    if (error) throw error;
-    
-    toast.success('Profile updated successfully');
-    
-    // Fetch updated profile
-    const { data: updatedProfile, error: fetchError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', data.id)
-      .single();
-    
-    if (fetchError) throw fetchError;
-    
-    return updatedProfile as UserProfile;
-  } catch (error) {
-    console.error('Error updating profile:', error);
-    toast.error('Failed to update profile');
-    return null;
-  }
+export interface AppUser {
+  id: string;
+  email: string | null;
+  created_at: string;
+  last_sign_in_at: string | null;
+  role: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  avatar_url: string | null;
 }
 
-export async function updateUserPassword(
-  currentPassword: string,
-  newPassword: string
-): Promise<boolean> {
+export const getAllUsers = async (): Promise<{ users: AppUser[]; error: Error | null }> => {
   try {
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword
+    const { data, error } = await supabase.from('app_users').select(`
+      id,
+      email,
+      created_at,
+      last_sign_in_at,
+      role,
+      first_name,
+      last_name,
+      phone,
+      avatar_url
+    `);
+
+    if (error) {
+      console.error('Supabase error fetching users from app_users view:', error);
+      toast.error(`Failed to load users: ${error.message}`);
+      return { users: [], error: new Error(error.message) };
+    }
+
+    const users: AppUser[] = (data || []).map(userRow => ({
+      id: userRow.id,
+      email: userRow.email,
+      created_at: userRow.created_at,
+      last_sign_in_at: userRow.last_sign_in_at,
+      role: userRow.role,
+      first_name: userRow.first_name,
+      last_name: userRow.last_name,
+      phone: userRow.phone,
+      avatar_url: userRow.avatar_url,
+    }));
+
+    return { users, error: null };
+  } catch (err: any) {
+    console.error('Error in getAllUsers service:', err);
+    toast.error(`An unexpected error occurred while fetching users: ${err.message}`);
+    return { users: [], error: err };
+  }
+};
+
+/**
+ * Updates a specific user's role using a Supabase RPC function.
+ * This function should only be callable by an admin.
+ * @param userId The ID of the user whose role to update.
+ * @param newRole The new role (e.g., 'customer', 'admin', 'rider', or null).
+ * @param secretCode The secret code required for authorization.
+ * @returns True if successful, false otherwise.
+ */
+export const updateUserRole = async (userId: string, newRole: string | null, secretCode: string): Promise<boolean> => { // Added secretCode
+  try {
+    const { error } = await supabase.rpc('update_user_role', {
+      target_user_id: userId,
+      new_role: newRole,
+      secret_code: secretCode, // Pass the secret code
     });
-    
-    if (error) throw error;
-    
-    toast.success('Password updated successfully');
+
+    if (error) {
+      console.error('Supabase error updating user role:', error);
+      toast.error(`Failed to update user role: ${error.message}`);
+      return false;
+    }
+
+    toast.success(`User role updated to "${newRole || 'No Role'}" successfully!`);
     return true;
-  } catch (error: any) {
-    console.error('Error updating password:', error);
-    toast.error(`Failed to update password: ${error.message}`);
+  } catch (err: any) {
+    console.error('Error in updateUserRole service:', err);
+    toast.error(err.message || 'An unexpected error occurred during role update.');
     return false;
   }
-}
-
-export async function uploadUserAvatar(file: File): Promise<string | null> {
-  try {
-    const { data: session } = await supabase.auth.getSession();
-    if (!session?.session?.user) {
-      toast.error('You must be logged in to upload an avatar');
-      return null;
-    }
-    
-    const userId = session.session.user.id;
-    const fileExt = file.name.split('.').pop();
-    const fileName = `avatar-${userId}-${Date.now()}.${fileExt}`;
-    const filePath = `avatars/${fileName}`;
-    
-    // Upload file to storage
-    const { error: uploadError } = await supabase.storage
-      .from('user-content')
-      .upload(filePath, file);
-    
-    if (uploadError) throw uploadError;
-    
-    // Get public URL of the uploaded file
-    const { data: urlData } = supabase.storage
-      .from('user-content')
-      .getPublicUrl(filePath);
-    
-    // Update user profile with new avatar URL
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ avatar_url: urlData.publicUrl })
-      .eq('id', userId);
-    
-    if (updateError) throw updateError;
-    
-    toast.success('Avatar uploaded successfully');
-    return urlData.publicUrl;
-  } catch (error) {
-    console.error('Error uploading avatar:', error);
-    toast.error('Failed to upload avatar');
-    return null;
-  }
-}
+};

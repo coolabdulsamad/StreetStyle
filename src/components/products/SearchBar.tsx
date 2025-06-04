@@ -7,7 +7,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Search, X } from 'lucide-react';
 import { searchProducts } from '@/lib/data';
-import { Product } from '@/types/product';
+import { Product } from '@/lib/types';
 
 const SearchBar: React.FC = () => {
   const [query, setQuery] = useState('');
