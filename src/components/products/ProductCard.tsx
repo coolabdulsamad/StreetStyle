@@ -102,7 +102,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <div className="mb-1 text-sm text-muted-foreground">{product.category.name}</div>
           <h3 className="font-medium text-lg mb-1 line-clamp-1">{product.name}</h3>
           <div className="flex items-center justify-between">
-            <span className="font-bold">${product.price}</span>
+            &#8358;{product.price}
             {/* Using the correct 'average_rating' property */}
             {displayRating && (
               <div className="flex items-center text-sm">
