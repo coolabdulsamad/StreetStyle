@@ -134,7 +134,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
             {[...Array(5)].map((_, i) => (
               <Star
                 key={i}
-                className={`w-4 h-4 ₦{
+                className={`w-4 h-4 ${
                   i < Math.floor(product.rating || 0)
                     ? 'text-yellow-400 fill-current'
                     : 'text-gray-300'
@@ -151,8 +151,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <span><strong>SKU:</strong> {product.sku}</span>
           <span className="flex items-center gap-1">
-            <div className={`w-2 h-2 rounded-full ₦{product.stock_quantity > 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
-            {product.stock_quantity > 0 ? `₦{product.stock_quantity} in stock` : 'Out of stock'}
+            <div className={`w-2 h-2 rounded-full ${product.stock_quantity > 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            {product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : 'Out of stock'}
           </span>
         </div>
       </div>
@@ -162,16 +162,16 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
       {/* Price */}
       <div className="space-y-2">
         <div className="text-3xl font-bold">
-          ₦{hasVariants && selectedVariant ? selectedVariant.price : product.price}
+          ${hasVariants && selectedVariant ? selectedVariant.price : product.price}
           {product.original_price && product.original_price > product.price && (
             <span className="text-lg text-muted-foreground line-through ml-2">
-              ₦{product.original_price}
+              ${product.original_price}
             </span>
           )}
         </div>
         {product.is_sale && (
           <Badge variant="destructive">
-            Save ₦{(product.original_price || 0) - product.price}
+            Save ${(product.original_price || 0) - product.price}
           </Badge>
         )}
       </div>
@@ -361,7 +361,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
             size="lg"
             className={isProductInWishlist ? 'text-red-500 border-red-500' : ''}
           >
-            <Heart className={`w-4 h-4 ₦{isProductInWishlist ? 'fill-current' : ''}`} />
+            <Heart className={`w-4 h-4 ${isProductInWishlist ? 'fill-current' : ''}`} />
           </Button>
         </div>
 
