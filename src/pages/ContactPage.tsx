@@ -1,4 +1,4 @@
-
+import emailjs from '@emailjs/browser'
 import React, { useState } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,12 +17,35 @@ const ContactPage = () => {
     subject: '',
     message: ''
   });
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically send the form data to your backend
-    toast.success('Message sent successfully! We\'ll get back to you soon.');
-    setFormData({ name: '', email: '', subject: '', message: '' });
+    setLoading(true);
+
+    try {
+      const templateParams = {
+        from_name: formData.name,
+        from_email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+      };
+
+      await emailjs.send(
+        import.meta.env.VITE_SERVICE_ID,
+        import.meta.env.VITE_TEMPLATE_ID,
+        templateParams,
+        import.meta.env.VITE_PUBLIC_KEY
+      );
+
+      toast.success('Message sent successfully! We\'ll get back to you soon.');
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      toast.error('Failed to send message. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (field: string, value: string) => {
@@ -97,8 +120,8 @@ const ContactPage = () => {
                     />
                   </div>
                   
-                  <Button type="submit" className="w-full">
-                    Send Message
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? 'Sending...' : 'Send Message'}
                   </Button>
                 </form>
               </CardContent>
@@ -116,7 +139,12 @@ const ContactPage = () => {
                   <Mail className="w-5 h-5 text-primary" />
                   <div>
                     <p className="font-medium">Email</p>
-                    <p className="text-sm text-muted-foreground">support@streetstyle.com</p>
+                    <a 
+                      href="mailto:ezem77743@gmail.com" 
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      ezem77743@gmail.com
+                    </a>
                   </div>
                 </div>
                 
@@ -124,7 +152,12 @@ const ContactPage = () => {
                   <Phone className="w-5 h-5 text-primary" />
                   <div>
                     <p className="font-medium">Phone</p>
-                    <p className="text-sm text-muted-foreground">+1 (555) 123-4567</p>
+                    <a 
+                      href="tel:+2348134833065" 
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      +234 813 483 3065
+                    </a>
                   </div>
                 </div>
                 
@@ -133,8 +166,8 @@ const ContactPage = () => {
                   <div>
                     <p className="font-medium">Address</p>
                     <p className="text-sm text-muted-foreground">
-                      123 Fashion Street<br />
-                      New York, NY 10001
+                      123 Lagos Street<br />
+                      Lagos, Nigeria
                     </p>
                   </div>
                 </div>
@@ -149,20 +182,6 @@ const ContactPage = () => {
                     </p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Live Chat</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Need immediate help? Chat with our support team.
-                </p>
-                <Button className="w-full">
-                  Start Live Chat
-                </Button>
               </CardContent>
             </Card>
           </div>

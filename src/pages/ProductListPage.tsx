@@ -10,6 +10,7 @@ import { Filter, X, Loader2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client'; // Assuming this path to your Supabase client
 import { mapProductData } from '@/lib/data'; // Import mapProductData here!
+import { formatPrice } from '@/lib/utils';
 
 const ProductListPage = () => {
   const { categorySlug } = useParams<{ categorySlug: string }>();
@@ -22,11 +23,10 @@ const ProductListPage = () => {
 
   // --- Data Fetching with react-query ---
 
-  // 1. Fetch all products (to apply filters later)
+  // 1. Update the products query to include active products
   const { data: allProducts, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[]>({
     queryKey: ['products', 'all'],
     queryFn: async () => {
-      // Fetch products along with their brand, category, tags, and images
       const { data, error } = await supabase
         .from('products')
         .select(`
@@ -36,15 +36,11 @@ const ProductListPage = () => {
           tags:products_tags(tag:tags(*)),
           images:product_images(*)
         `)
-        .eq('is_sale', true); // Only fetch active products
+        // Remove the is_active filter if the column doesn't exist
+        .order('created_at', { ascending: false }); // Add ordering
 
       if (error) throw new Error(error.message);
-
-      // Apply the mapProductData helper from src/lib/data.ts here!
-      const mappedData = data.map(mapProductData);
-
-      // console.log('DEBUG: ProductListPage fetched and mapped products before setting state:', mappedData); // Debug log
-      return mappedData as Product[];
+      return data.map(mapProductData) as Product[];
     },
   });
 
@@ -77,8 +73,14 @@ const ProductListPage = () => {
   const allTags = tags || []; // Ensure allTags is always an array
   const allCategories = categories || []; // Ensure allCategories is always an array
 
-  // Calculate max price from fetched products
-  const currentMaxPrice = allProducts ? Math.max(...allProducts.map(product => product.price)) : 1000;
+  // Update the currentMaxPrice calculation
+  const currentMaxPrice = React.useMemo(() => {
+    if (!allProducts?.length) return 1000;
+    const prices = allProducts
+      .map(product => product.price || 0)
+      .filter(price => price > 0);
+    return prices.length ? Math.max(...prices) : 1000;
+  }, [allProducts]);
 
   useEffect(() => {
     // Set initial category from URL slug
@@ -94,30 +96,35 @@ const ProductListPage = () => {
     }
   }, [categorySlug, allProducts, currentMaxPrice]); // Add allProducts and currentMaxPrice to dependency array
 
+  // 2. Update the filtering useEffect
   useEffect(() => {
-    if (!allProducts) return; // Wait until products are loaded
+    if (!allProducts) return;
 
     let result = [...allProducts];
 
     // Filter by category
     if (selectedCategory) {
-      result = result.filter(product => product.category?.slug === selectedCategory); // Added optional chaining for safety
-    }
-
-    // Filter by tags
-    if (selectedTags.length > 0) {
-      result = result.filter(product =>
-        product.tags.some(tag => selectedTags.includes(tag.id))
+      result = result.filter(product => 
+        product.category && product.category.slug === selectedCategory
       );
     }
 
-    // Filter by price range
-    result = result.filter(
-      product => product.price >= priceRange[0] && product.price <= priceRange[1]
+    // Filter by tags - improved type safety
+    if (selectedTags.length > 0) {
+      result = result.filter(product =>
+        product.tags?.some(tag => selectedTags.includes(tag.id))
+      );
+    }
+
+    // Filter by price range with null check
+    result = result.filter(product => 
+      product.price != null && 
+      product.price >= priceRange[0] && 
+      product.price <= priceRange[1]
     );
 
     setFilteredProducts(result);
-  }, [selectedCategory, selectedTags, priceRange, allProducts]); // Add allProducts to dependency array
+  }, [selectedCategory, selectedTags, priceRange, allProducts]);
 
   const handleCategoryChange = (category: string | null) => {
     setSelectedCategory(category);
@@ -197,6 +204,7 @@ const ProductListPage = () => {
                   selectedTags={selectedTags}
                   priceRange={priceRange}
                   maxPrice={currentMaxPrice}
+                  formatPrice={formatPrice} // Add this prop
                   onCategoryChange={handleCategoryChange}
                   onTagChange={handleTagChange}
                   onPriceChange={handlePriceChange}
@@ -217,6 +225,7 @@ const ProductListPage = () => {
               selectedTags={selectedTags}
               priceRange={priceRange}
               maxPrice={currentMaxPrice}
+              formatPrice={formatPrice} // Add this prop
               onCategoryChange={handleCategoryChange}
               onTagChange={handleTagChange}
               onPriceChange={handlePriceChange}

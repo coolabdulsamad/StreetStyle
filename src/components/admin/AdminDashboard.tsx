@@ -210,7 +210,8 @@ const AdminDashboard = () => {
           product_id,
           quantity,
           price,
-          products(name)
+          products!
+          fk_order_items_product_id(name)
         `);
 
       if (orderItemsError) {

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -17,6 +16,7 @@ interface FilterSidebarProps {
   onTagChange: (tag: string) => void;
   onPriceChange: (range: [number, number]) => void;
   onClearFilters: () => void;
+  formatPrice: (price: number) => string;
 }
 
 const FilterSidebar: React.FC<FilterSidebarProps> = ({
@@ -29,7 +29,8 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   onCategoryChange,
   onTagChange,
   onPriceChange,
-  onClearFilters
+  onClearFilters,
+  formatPrice
 }) => {
   const handlePriceRangeChange = (values: number[]) => {
     onPriceChange([values[0], values[1]]);
@@ -80,9 +81,9 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       <div>
         <h3 className="font-medium text-lg mb-3">Price Range</h3>
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">${priceRange[0]}</span>
-            <span className="text-sm font-medium">${priceRange[1]}</span>
+          <div className="flex justify-between">
+            <span className="text-sm font-medium">{formatPrice(priceRange[0])}</span>
+            <span className="text-sm font-medium">{formatPrice(priceRange[1])}</span>
           </div>
           <Slider
             defaultValue={[priceRange[0], priceRange[1]]}
