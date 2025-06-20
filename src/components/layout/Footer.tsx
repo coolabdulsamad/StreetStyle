@@ -1,19 +1,30 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import emailjs from '@emailjs/browser';
 
 const Footer = () => {
   const [email, setEmail] = useState('');
+  const [status, setStatus] = useState('');
 
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
-      // Here you would typically send the email to your backend
-      toast.success('Successfully subscribed to newsletter!');
+    setStatus('Sending...');
+
+    try {
+      await emailjs.send(
+        process.env.REACT_APP_EMAILJS_SERVICE_ID!,
+        process.env.REACT_APP_EMAILJS_TEMPLATE_ID!,
+        { user_email: email },
+        process.env.REACT_APP_EMAILJS_USER_ID // or PUBLIC_KEY if using new EmailJS
+      );
+      setStatus('Subscription successful! Check your email.');
       setEmail('');
+      toast.success('Successfully subscribed to newsletter!');
+    } catch (error) {
+      setStatus('Subscription failed. Please try again.');
     }
   };
 
@@ -27,26 +38,15 @@ const Footer = () => {
             <p className="text-gray-400 mb-4">
               The premier destination for all your streetwear and sneaker needs.
             </p>
-            <div className="flex space-x-4">
-              <a href="#" className="text-brand-light hover:text-primary transition-colors">
-                <span className="sr-only">Facebook</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-                </svg>
+            <div className="flex space-x-4 mt-4">
+              <a href="https://facebook.com/yourpage" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                <i className="fab fa-facebook-f" />
               </a>
-              <a href="#" className="text-brand-light hover:text-primary transition-colors">
-                <span className="sr-only">Instagram</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-                  <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                  <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
-                </svg>
+              <a href="https://instagram.com/yourpage" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                <i className="fab fa-instagram" />
               </a>
-              <a href="#" className="text-brand-light hover:text-primary transition-colors">
-                <span className="sr-only">Twitter</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-                  <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
-                </svg>
+              <a href="https://twitter.com/yourpage" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+                <i className="fab fa-twitter" />
               </a>
             </div>
           </div>
@@ -94,6 +94,7 @@ const Footer = () => {
               >
                 Subscribe
               </Button>
+              {status && <div className="text-gray-400 text-sm mt-2">{status}</div>}
             </form>
           </div>
         </div>

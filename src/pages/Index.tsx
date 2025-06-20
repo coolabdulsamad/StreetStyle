@@ -224,30 +224,7 @@ const Index = () => {
         )}
       </section>
 
-      {/* Newsletter Section - Enhanced */}
-      <section className="py-20 bg-gradient-to-r from-black via-gray-900 to-black text-white">
-        <div className="container">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Stay Ahead of the Game</h2>
-            <p className="text-xl mb-8 text-gray-300">
-              Get exclusive access to limited drops, early releases, and insider deals
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-6 py-4 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-primary text-white placeholder-gray-400"
-              />
-              <Button size="lg" className="px-8 py-4">
-                Subscribe Now
-              </Button>
-            </div>
-            <p className="text-sm text-gray-400 mt-4">
-              Join 50,000+ sneakerheads and style enthusiasts
-            </p>
-          </div>
-        </div>
-      </section>
+      
     </PageLayout>
   );
 };

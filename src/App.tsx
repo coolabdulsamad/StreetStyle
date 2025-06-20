@@ -28,6 +28,8 @@ import UserOrdersPage from "./pages/orders"; // Corrected import path
 import UserOrderDetailPage from "./pages/OrderDetailPage"; // Corrected import path
 import TrackOrderPage from "./pages/TrackOrderPage";
 import AdminUserList from "./pages/admin/AdminUsersList"; 
+import PrivacyPolicyPage from '@/pages/PrivacyPolicyPage';
+import TermsOfServicePage from '@/pages/TermsOfServicePage';
 
 const App = () => {
   return (
@@ -82,6 +84,8 @@ const App = () => {
       <Route path="/returns" element={<ReturnsPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/size-guide" element={<SizeGuidePage />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms-of-service" element={<TermsOfServicePage />} />
       {/* Admin Routes */}
       <Route path="/admin" element={
         <ProtectedRoute requireAdmin={true}>
@@ -117,6 +121,6 @@ const App = () => {
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
-};
+}
 
 export default App;
