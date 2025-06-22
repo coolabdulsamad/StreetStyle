@@ -27,6 +27,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { formatPrice } from '@/lib/utils';
 
 // Import your generated Supabase database types
 import { Database } from '@/lib/types';
@@ -337,7 +338,7 @@ const AdminDashboard = () => {
         tempRecentActivities.push({
           type: 'order',
           id: order.id,
-          description: `New order #${order.id.substring(0, 8)} by ${userName} for $${order.total.toFixed(2)}`,
+          description: `New order #${order.id.substring(0, 8)} by ${userName} for ${formatPrice(order.total)}`,
           timestamp: order.created_at,
           user_id: order.user_id,
         });
@@ -413,7 +414,7 @@ const AdminDashboard = () => {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold">{formatPrice(stats.totalRevenue)}</div>
             <p className="text-xs text-muted-foreground">
               <span className={`${stats.revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {stats.revenueGrowth >= 0 ? '+' : ''}{stats.revenueGrowth.toFixed(1)}%
@@ -563,7 +564,7 @@ const AdminDashboard = () => {
                       </div>
                       <div className="text-right">
                         <p className="font-medium">{product.sales} sales</p>
-                        <p className="text-sm text-muted-foreground">${product.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        <p className="text-sm text-muted-foreground">{formatPrice(product.revenue)}</p>
                       </div>
                     </div>
                   ))

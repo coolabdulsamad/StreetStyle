@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +7,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ProductVariant } from '@/lib/types';
 import ProductVariantForm from './ProductVariantForm';
+import { formatPrice } from '@/lib/utils';
 
 interface ProductVariantListProps {
   productId: string;
@@ -124,7 +124,7 @@ const ProductVariantList: React.FC<ProductVariantListProps> = ({ productId }) =>
                   <TableCell>{variant.name}</TableCell>
                   <TableCell>{variant.size || '-'}</TableCell>
                   <TableCell>{variant.color || '-'}</TableCell>
-                  <TableCell className="text-right">${variant.price.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">{formatPrice(variant.price)}</TableCell>
                   <TableCell className="text-right">{variant.stock}</TableCell>
                   <TableCell>{variant.sku}</TableCell>
                   <TableCell className="text-right">

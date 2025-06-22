@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { formatPrice } from '@/lib/utils';
 
 const ORDER_STATUSES = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Canceled'];
 const DELIVERY_STATUSES = ['unassigned', 'assigned', 'out_for_delivery', 'attempted_delivery', 'delivered', 'delivery_failed'];
@@ -173,7 +174,7 @@ const AdminOrderDetail = () => {
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Total Amount</p>
-            <p className="font-medium text-lg">${order.total.toFixed(2)}</p>
+            <p className="font-medium text-lg">{formatPrice(order.total)}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Customer Name</p>
@@ -266,8 +267,8 @@ const AdminOrderDetail = () => {
                         {item.product_variants?.sku || 'N/A'}
                       </TableCell>
                       <TableCell className="text-right">{item.quantity}</TableCell>
-                      <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
-                      <TableCell className="text-right">${(item.quantity * item.price).toFixed(2)}</TableCell>
+                      <TableCell className="text-right">{formatPrice(item.price)}</TableCell>
+                      <TableCell className="text-right">{formatPrice(item.quantity * item.price)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

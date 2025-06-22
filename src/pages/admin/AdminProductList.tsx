@@ -10,6 +10,7 @@ import { getProducts, deleteProduct } from '../../lib/services/productService1';
 import { ExtendedProduct } from '../../lib/services/productService1'; // Ensure this path is correct
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
+import { formatPrice } from '../../lib/utils';
 
 // Import AlertDialog components from shadcn/ui
 import {
@@ -148,7 +149,7 @@ const AdminProductList = () => {
                         <TableCell>{product.category?.name || 'N/A'}</TableCell>
                         <TableCell>{product.brand?.name || 'N/A'}</TableCell>
                         <TableCell>{product.sku || 'N/A'}</TableCell>
-                        <TableCell className="text-right">${product.price.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">{formatPrice(product.price)}</TableCell>
                         <TableCell className="text-right">{totalStock}</TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">

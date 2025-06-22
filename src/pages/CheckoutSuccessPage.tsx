@@ -9,38 +9,43 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatPrice } from '@/lib/utils';
 import { toast } from 'sonner';
 
-// Define a type for your order (adjust based on your orders table schema)
+interface OrderItem {
+  id: string;
+  quantity: number;
+  price: number;
+  products?: { name: string; product_images?: { image_url: string }[] };
+  product_variants?: { name: string | null };
+}
+
+interface Address {
+  street_address: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+  full_name: string | null;
+  phone_number: string | null;
+}
+
 interface OrderDetails {
   id: string;
   total: number;
   status: string;
   payment_method: string;
   created_at: string;
-  order_items: Array<{
-    id: string;
-    quantity: number;
-    price: number;
-    products: { name: string; product_images: { image_url: string }[] | null };
-    product_variants: { name: string | null };
-  }>;
-  shipping_address: {
-    street_address: string;
-    city: string;
-    state: string;
-    postal_code: string;
-    country: string;
-    full_name: string | null;
-    phone_number: string | null;
-  } | null;
-  billing_address: {
-    street_address: string;
-    city: string;
-    state: string;
-    postal_code: string;
-    country: string;
-    full_name: string | null;
-    phone_number: string | null;
-  } | null;
+  order_items: OrderItem[];
+  shipping_address: Address | null;
+  billing_address: Address | null;
+}
+
+function isOrderDetails(obj: any): obj is OrderDetails {
+  return obj && typeof obj === 'object' &&
+    typeof obj.id === 'string' &&
+    typeof obj.total === 'number' &&
+    typeof obj.status === 'string' &&
+    typeof obj.payment_method === 'string' &&
+    typeof obj.created_at === 'string' &&
+    Array.isArray(obj.order_items);
 }
 
 const CheckoutSuccessPage = () => {
@@ -51,59 +56,56 @@ const CheckoutSuccessPage = () => {
   const [paymentStatus, setPaymentStatus] = useState<'success' | 'pending' | 'failed' | null>(null);
   const [paymentMethodDisplay, setPaymentMethodDisplay] = useState<string>('');
   const [pollingAttempts, setPollingAttempts] = useState(0);
-  const MAX_POLLING_ATTEMPTS = 5; // Max retries for polling
+  const MAX_POLLING_ATTEMPTS = 5;
 
-  const getOrderStatus = useCallback(async (orderId: string) => {
+  const fetchOrder = useCallback(async (filter: { id?: string; paystack_reference?: string }) => {
     setIsLoading(true);
+    setOrder(null);
+    setPaymentStatus(null);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('orders')
         .select(`
-          *,
-          order_items!order_items_order_id_fkey(
+          id, total, status, payment_method, created_at,
+          order_items:order_items!fk_order_items_order_id(
             id, quantity, price,
-            products!order_items_product_id_fkey(
+            products:products!fk_order_items_product_id(
               name,
               product_images(image_url)
             ),
-            product_variants!order_items_variant_id_fkey(
+            product_variants:product_variants!fk_order_items_variant_id(
               name
             )
           ),
           shipping_address:user_addresses!orders_shipping_address_id_fkey(
-            street_address, city, state, postal_code, country, full_name, phone_number
+            street_address, city, state, postal_code, country
           ),
           billing_address:user_addresses!orders_billing_address_id_fkey(
-            street_address, city, state, postal_code, country, full_name, phone_number
+            street_address, city, state, postal_code, country
           )
-        `)
-        .eq('id', orderId)
-        .single();
-
+        `);
+      if (filter.id) query = query.eq('id', filter.id as any);
+      if (filter.paystack_reference) query = query.eq('paystack_reference', filter.paystack_reference as any);
+      console.log('Fetching order with:', filter);
+      const { data, error } = await query.single();
+      console.log('Supabase data:', data, 'error:', error);
       if (error) {
-        console.error('Error fetching order details:', error);
-        // If order not found, it might be due to webhook delay.
-        // Only toast error if it's a persistent issue after polling.
         setOrder(null);
-        setPaymentStatus('failed'); // Default to failed if not found
-      } else if (data) {
-        setOrder(data as OrderDetails);
-        if (data.status === 'completed') {
-          setPaymentStatus('success');
-        } else if (data.status === 'pending_payment') {
-          setPaymentStatus('pending'); // Payment initiated but not yet confirmed by webhook
-        } else if (data.status === 'pending') { // For COD
-          setPaymentStatus('success'); // COD is 'successful' in terms of placement
-        } else {
-          setPaymentStatus('failed'); // Any other status
-        }
+        setPaymentStatus('failed');
+        return;
+      }
+      if (isOrderDetails(data)) {
+        setOrder(data);
+        if (data.status === 'completed') setPaymentStatus('success');
+        else if (data.status === 'pending_payment') setPaymentStatus('pending');
+        else if (data.status === 'pending') setPaymentStatus('success');
+        else setPaymentStatus('failed');
         setPaymentMethodDisplay(data.payment_method === 'cod' ? 'Cash on Delivery' : 'Paystack (Card)');
       } else {
         setOrder(null);
         setPaymentStatus('failed');
       }
-    } catch (err: any) {
-      console.error('Unexpected error fetching order:', err);
+    } catch (err) {
       setOrder(null);
       setPaymentStatus('failed');
     } finally {
@@ -113,88 +115,47 @@ const CheckoutSuccessPage = () => {
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
-    const tempSessionId = queryParams.get('tempSessionId'); // Now looking for tempSessionId
-    const orderIdFromState = location.state?.orderId; // For COD payments
-
+    const tempSessionId = queryParams.get('tempSessionId');
+    const orderIdFromState = location.state?.orderId;
+    const paymentMethodFromState = location.state?.paymentMethod;
+    console.log('location.state:', location.state);
+    console.log('orderIdFromState:', orderIdFromState);
+    console.log('tempSessionId:', tempSessionId);
     let targetOrderId: string | null = null;
-
     if (orderIdFromState) {
-      // This is for COD payments, where the order is created immediately
       targetOrderId = orderIdFromState;
-      setPaymentMethodDisplay(location.state?.paymentMethod || 'Cash on Delivery');
+      setPaymentMethodDisplay(paymentMethodFromState || 'Cash on Delivery');
+      if (!orderIdFromState) {
+        toast.error('Order ID missing from navigation state. Please contact support or try again.');
+        console.error('COD: Missing orderId in navigation state:', location.state);
+      } else {
+        console.log('COD: Navigating to success page with orderId:', orderIdFromState);
+      }
     } else if (tempSessionId) {
-      // This is for Paystack payments, where the order is created by webhook
-      // We need to poll for the actual order using the tempSessionId as reference
       setPaymentMethodDisplay('Paystack (Card)');
-      // We will now poll for the order that has this tempSessionId as its reference
       const pollForOrder = async () => {
         setIsLoading(true);
         try {
-          const { data: orderData, error } = await supabase
-            .from('orders')
-            .select(`
-              *,
-              order_items!order_items_order_id_fkey(
-                id, quantity, price,
-                products!order_items_product_id_fkey(
-                  name,
-                  product_images(image_url)
-                ),
-                product_variants!order_items_variant_id_fkey(
-                  name
-                )
-              ),
-              shipping_address:user_addresses!orders_shipping_address_id_fkey(
-                street_address, city, state, postal_code, country, full_name, phone_number
-              ),
-              billing_address:user_addresses!orders_billing_address_id_fkey(
-                street_address, city, state, postal_code, country, full_name, phone_number
-              )
-            `)
-            .eq('paystack_reference', tempSessionId) // Match by Paystack reference
-            .single();
-
-          if (error && error.code === 'PGRST116' && pollingAttempts < MAX_POLLING_ATTEMPTS) {
-            // PGRST116 means "No rows found". This is expected if webhook hasn't fired yet.
-            console.log(`Polling for order (attempt ${pollingAttempts + 1}/${MAX_POLLING_ATTEMPTS})...`);
+          await fetchOrder({ paystack_reference: tempSessionId });
+          if (!order && pollingAttempts < MAX_POLLING_ATTEMPTS) {
             setPollingAttempts(prev => prev + 1);
-            setTimeout(() => pollForOrder(), 2000); // Retry after 2 seconds
-          } else if (orderData) {
-            setOrder(orderData as OrderDetails);
-            if (orderData.status === 'completed') {
-              setPaymentStatus('success');
-            } else {
-              setPaymentStatus('pending'); // Still pending, but order found
-            }
-            setIsLoading(false);
-          } else {
-            // Order not found after max attempts or other error
-            toast.error('Order not found or payment failed after verification.');
-            setPaymentStatus('failed');
-            setIsLoading(false);
+            setTimeout(pollForOrder, 2000);
           }
-        } catch (err) {
-          console.error('Error during polling:', err);
-          toast.error('An unexpected error occurred during order verification.');
+        } catch {
           setPaymentStatus('failed');
-          setIsLoading(false);
         }
       };
-
-      pollForOrder(); // Start polling
-    } else {
-      // No valid orderId or tempSessionId, redirect
-      toast.error('Invalid access to success page. Redirecting...');
-      navigate('/');
+      pollForOrder();
       return;
     }
-
-    // For COD orders, getOrderStatus is called directly
-    if (targetOrderId) {
-      getOrderStatus(targetOrderId);
+    // Fallback to a hardcoded order ID for testing if nothing is found
+    if (!targetOrderId) {
+      console.warn('No orderId found in state or query params, using fallback test order ID.');
+      toast.error('Order ID not found. Showing test order for debugging.');
+      targetOrderId = 'e5d369dd-08c2-4325-82f5-9623d258e2bc'; // Replace with a real order UUID for your test
     }
-  }, [location.search, location.state, navigate, getOrderStatus, pollingAttempts]);
-
+    if (targetOrderId) fetchOrder({ id: targetOrderId });
+  }, [location.search, location.state, fetchOrder, pollingAttempts]);
 
   if (isLoading) {
     return (

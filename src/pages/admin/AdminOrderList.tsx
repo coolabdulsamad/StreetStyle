@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label'; // Ensure Label is imported
+import { formatPrice } from '../../lib/utils';
 
 // Import the new order service functions and type
 import { getOrders, updateOrderStatus, ExtendedOrder } from '../../lib/services/orderService';
@@ -123,7 +124,7 @@ const AdminOrderList = () => {
                           ? `${order.user_profile.first_name} ${order.user_profile.last_name}`
                           : order.user_id} {/* Fallback to user_id if no profile name */}
                       </TableCell>
-                      <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">{formatPrice(order.total)}</TableCell>
                       <TableCell>
                         <Select value={order.status} onValueChange={(value) => handleStatusChange(order.id, value)}>
                           <SelectTrigger className="w-[120px]">
