@@ -373,6 +373,73 @@ const AdminProductEdit = () => {
     }
   };
 
+  // --- Bulk Variant Handling ---
+  const [bulkColor, setBulkColor] = useState('');
+  const [bulkColorHex, setBulkColorHex] = useState('#ffffff');
+  const [bulkSizes, setBulkSizes] = useState<string[]>([]);
+  const allSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL']; // Define all available sizes here
+
+  const shoeCategories = ['Sneakers', 'Shoes', 'Boots']; // Add your shoe category names here
+  const clothingCategories = ['T-Shirts', 'Hoodies', 'Pants', 'Shirts', 'Jackets']; // Add your clothing category names here
+
+  const getAvailableSizes = () => {
+    if (!product?.category?.name) return allSizes;
+    if (shoeCategories.includes(product.category.name)) {
+      return [
+        '36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46', '47', '48',
+        '5', '6', '7', '8', '9', '10', '11', '12', '13'
+      ];
+    }
+    if (clothingCategories.includes(product.category.name)) {
+      return ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+    }
+    return allSizes;
+  };
+
+  const handleBulkSizeToggle = (size: string) => {
+    setBulkSizes((prev) =>
+      prev.includes(size) ? prev.filter(s => s !== size) : [...prev, size]
+    );
+  };
+
+  const handleAddBulkVariants = () => {
+    if (!bulkColor || bulkSizes.length === 0) return;
+
+    // Prevent duplicates by checking against existing variants
+    const existingKeys = new Set(
+      variants
+        .filter(v => !v.isDeleted)
+        .map(v => `${v.color?.toLowerCase()}-${v.size?.toLowerCase()}`)
+    );
+
+    const baseSku = product.sku ? product.sku.replace(/\s+/g, '').toUpperCase() : 'SKU';
+
+    const newVariants: EditableProductVariant[] = bulkSizes
+      .filter(size => !existingKeys.has(`${bulkColor.toLowerCase()}-${size.toLowerCase()}`))
+      .map(size => ({
+        id: uuidv4(),
+        sku: `${baseSku}-${bulkColor.replace(/\s+/g, '').toUpperCase()}-${size.toString().toUpperCase()}`,
+        stock: 0,
+        price: product.price,
+        color: bulkColor,
+        size: size,
+        color_hex: bulkColorHex,
+        isNew: true,
+        isDeleted: false,
+      }));
+
+    if (newVariants.length === 0) {
+      toast.error('All selected sizes for this color already exist as variants.');
+      return;
+    }
+
+    setVariants(prev => [...prev, ...newVariants]);
+    setBulkColor('');
+    setBulkColorHex('#ffffff');
+    setBulkSizes([]);
+    toast.success('Bulk variants added. You can edit them individually if needed.');
+  };
+
   if (!isAuthReady) {
     return <div className="flex items-center justify-center min-h-screen">Loading authentication...</div>;
   }
@@ -634,6 +701,49 @@ const AdminProductEdit = () => {
             ))}
             <Button type="button" variant="outline" onClick={handleAddVariant}>
               <PlusCircle className="mr-2 h-4 w-4" /> Add New Variant
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Bulk Variant Addition Card */}
+        <Card className="mb-4">
+          <CardHeader>
+            <CardTitle>Add Multiple Sizes for a Color</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            <div className="flex gap-2 items-center">
+              <Label>Color:</Label>
+              <Input
+                value={bulkColor}
+                onChange={e => setBulkColor(e.target.value)}
+                placeholder="e.g. Red"
+                className="w-32"
+              />
+              <Input
+                type="color"
+                value={bulkColorHex}
+                onChange={e => setBulkColorHex(e.target.value)}
+                className="w-10 h-10 p-0"
+              />
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {getAvailableSizes().map(size => (
+                <label key={size} className="flex items-center gap-1">
+                  <input
+                    type="checkbox"
+                    checked={bulkSizes.includes(size)}
+                    onChange={() => handleBulkSizeToggle(size)}
+                  />
+                  {size}
+                </label>
+              ))}
+            </div>
+            <Button
+              type="button"
+              onClick={handleAddBulkVariants}
+              disabled={!bulkColor || bulkSizes.length === 0}
+            >
+              Add Variants
             </Button>
           </CardContent>
         </Card>
