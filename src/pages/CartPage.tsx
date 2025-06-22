@@ -9,6 +9,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
+import { formatPrice } from '@/lib/utils';
 
 const CartPage = () => {
   const { items, removeFromCart, updateQuantity, total, clearCart } = useCart();
@@ -91,7 +92,7 @@ const CartPage = () => {
                           {/* </Link> */}
                         </TableCell>
                         <TableCell>{item.variant.name}</TableCell>
-                        <TableCell>${item.variant.price.toFixed(2)}</TableCell>
+                        <TableCell>{formatPrice(item.variant.price)}</TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             <Button 
@@ -120,7 +121,7 @@ const CartPage = () => {
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">
-                          ${(item.variant.price * item.quantity).toFixed(2)}
+                          {formatPrice(item.variant.price * item.quantity)}
                         </TableCell>
                         <TableCell>
                           <Button 
@@ -158,7 +159,7 @@ const CartPage = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span>Subtotal ({items.reduce((acc, item) => acc + item.quantity, 0)} items)</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>{formatPrice(total)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping</span>
@@ -170,7 +171,7 @@ const CartPage = () => {
                 
                 <div className="flex justify-between font-bold text-lg mb-6">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>{formatPrice(total)}</span>
                 </div>
                 
                 <Button className="w-full" onClick={handleProceedToCheckout}>

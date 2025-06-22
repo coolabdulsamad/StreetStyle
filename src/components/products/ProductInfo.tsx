@@ -7,6 +7,7 @@ import { Product, ProductVariant } from '@/lib/types';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { formatPrice } from '@/lib/utils';
 
 // Shadcn UI Dialog components for the Size Guide
 import {
@@ -162,16 +163,16 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
       {/* Price */}
       <div className="space-y-2">
         <div className="text-3xl font-bold">
-          ${hasVariants && selectedVariant ? selectedVariant.price : product.price}
+          {formatPrice(hasVariants && selectedVariant ? selectedVariant.price : product.price)}
           {product.original_price && product.original_price > product.price && (
             <span className="text-lg text-muted-foreground line-through ml-2">
-              ${product.original_price}
+              {formatPrice(product.original_price)}
             </span>
           )}
         </div>
         {product.is_sale && (
           <Badge variant="destructive">
-            Save ${(product.original_price || 0) - product.price}
+            Save {formatPrice((product.original_price || 0) - product.price)}
           </Badge>
         )}
       </div>
@@ -301,7 +302,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
           </div>
           {selectedVariant && (
             <p className="text-sm text-muted-foreground">
-              Price: ₦{selectedVariant.price} • Stock: {selectedVariant.stock} available
+              Price: {formatPrice(selectedVariant.price)} • Stock: {selectedVariant.stock} available
             </p>
           )}
           {hasVariants && uniqueColors.length > 0 && !selectedColor && (
