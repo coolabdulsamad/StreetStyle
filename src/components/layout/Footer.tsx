@@ -71,33 +71,13 @@ const Footer = () => {
               <li><Link to="/returns" className="text-gray-400 hover:text-primary transition-colors">Returns</Link></li>
               <li><Link to="/contact" className="text-gray-400 hover:text-primary transition-colors">Contact Us</Link></li>
               <li><Link to="/size-guide" className="text-gray-400 hover:text-primary transition-colors">Size Guide</Link></li>
-              <li><Link to="/shipping" className="text-gray-400 hover:text-primary transition-colors">Shipping</Link></li>
+             
             </ul>
           </div>
 
-          {/* Newsletter */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Newsletter</h3>
-            <p className="text-gray-400 mb-4">Subscribe to get special offers, free giveaways, and releases.</p>
-            <form onSubmit={handleNewsletterSubmit} className="flex flex-col space-y-2">
-              <Input
-                type="email"
-                placeholder="Your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="px-4 py-2 bg-gray-800 text-white rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
-                required
-              />
-              <Button
-                type="submit"
-                className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
-              >
-                Subscribe
-              </Button>
-              {status && <div className="text-gray-400 text-sm mt-2">{status}</div>}
-            </form>
-          </div>
-        </div>
+         
+
+        </div> {/* Close grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 */}
 
         <div className="border-t border-gray-800 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
